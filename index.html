@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DJ Codes Hub</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #121212;
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .song {
+            background: #1f1f1f;
+            margin: 10px auto;
+            padding: 15px;
+            width: 300px;
+            border-radius: 10px;
+        }
+
+        button {
+            padding: 8px 15px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🎵 DJ Codes Hub</h1>
+
+<div class="song">
+    <h3>Dinero</h3>
+    <p id="code1">123456789</p>
+    <button onclick="copyCode('code1')">Copy Code</button>
+</div>
+
+<div class="song">
+    <h3>Titanium</h3>
+    <p id="code2">987654321</p>
+    <button onclick="copyCode('code2')">Copy Code</button>
+</div>
+
+<script>
+function copyCode(id){
+    const code = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(code);
+    alert("Copied: " + code);
+}
+</script>
+
+</body>
+</html>
