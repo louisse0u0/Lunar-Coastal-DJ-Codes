@@ -273,6 +273,12 @@ select:focus{
     <div class="container" id="songs"></div>
 </section>
 
+<!-- PRIVATE -->
+<section id="private">
+    <h2>My Private Uploads</h2>
+    <div class="container" id="privateSongs"></div>
+</section>
+
 <!-- UPLOAD -->
 <section id="upload">
     <h2>Upload Song</h2>
@@ -523,14 +529,13 @@ window.submitSong = async ()=>{
 
     status.innerText = "Submitted!";
 
-    // RESET FIELDS (must stay INSIDE function)
     document.getElementById("title").value = "";
     document.getElementById("code").value = "";
     document.getElementById("pitch").value = "";
 
-    loadSongs();
+    loadSongs(); // IMPORTANT
 };
-
+    
 /* LOAD SONGS */
 async function loadSongs(){
 
@@ -546,8 +551,10 @@ songs.sort((a, b) =>
 );
     
 populateFilters();
-    renderSongs(songs);
-    renderAdmin(songs);
+renderSongs(songs);
+renderAdmin(songs);
+renderPrivate(songs);
+    
 }
 
 function populateFilters(){
@@ -584,43 +591,43 @@ function populateFilters(){
 }
     
 /* RENDER (FIXED) */
-function renderAdmin(list = songs){
+function renderSongs(list = songs){
 
-    if(role !== "admin") return;
+    const publicSongs = list.filter(s => s.visibility !== "private");
 
-    const privateSongs = list.filter(s => s.visibility === "private");
+    document.getElementById("songs").innerHTML =
+    publicSongs.map(s => `
+        <div class="card">
+            <h3>${s.title}</h3>
+            <p>Pitch: ${s.pitch}</p>
+            <p>DJ: ${s.dj}</p>
+            <p>ID: ${s.code}</p>
 
-    document.getElementById("adminSongs").innerHTML = `
-        <h3>🔒 Private Uploads</h3>
-        ${privateSongs.map(s => `
-            <div class="card">
-                <h3>${s.title}</h3>
-                <p>Pitch: ${s.pitch}</p>
-                <p>DJ: ${s.dj}</p>
-                <p>ID: ${s.code}</p>
+            <button class="glow" onclick="copyCode('${s.code}')">
+                Copy
+            </button>
+        </div>
+    `).join("");
+}
 
-                <button onclick="deleteSong('${s.id}')">
-                    Delete
-                </button>
-            </div>
-        `).join("")}
+function renderPrivate(list = songs){
 
-        <hr style="margin:20px 0; border:1px solid #333">
+    if(role !== "dj" && role !== "admin") return;
 
-        <h3>🌍 Public Uploads</h3>
-        ${list.filter(s => s.visibility !== "private").map(s => `
-            <div class="card">
-                <h3>${s.title}</h3>
-                <p>Pitch: ${s.pitch}</p>
-                <p>DJ: ${s.dj}</p>
-                <p>ID: ${s.code}</p>
+    const myPrivate = list.filter(s =>
+        s.visibility === "private" &&
+        (role === "admin" || s.dj === currentDJ)
+    );
 
-                <button onclick="deleteSong('${s.id}')">
-                    Delete
-                </button>
-            </div>
-        `).join("")}
-    `;
+    document.getElementById("privateSongs").innerHTML =
+    myPrivate.map(s => `
+        <div class="card">
+            <h3>${s.title}</h3>
+            <p>Pitch: ${s.pitch}</p>
+            <p>DJ: ${s.dj}</p>
+            <p>ID: ${s.code}</p>
+        </div>
+    `).join("");
 }
     
 /* DELETE */
