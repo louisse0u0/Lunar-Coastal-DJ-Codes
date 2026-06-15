@@ -251,14 +251,22 @@ select:focus{
 
 #playlistContainer{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(550px, 1fr));
+    grid-template-columns:repeat(auto-fill, minmax(550px,1fr));
     gap:20px;
+
+    grid-auto-flow:dense;
 }
 
 /* Tablet */
 @media(max-width:1000px){
     #playlistContainer{
         grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:1000px){
+    #playlistContainer{
+        columns:1;
     }
 }
 
