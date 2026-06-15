@@ -3,120 +3,94 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lunar Coastal DJ Library</title>
+<title>Lunar Coastal DJ HUB</title>
 
 <style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial;
-}
-
 body{
+    margin:0;
+    font-family:Arial;
     background:#0b0b0b;
     color:white;
 }
 
+/* HEADER */
 header{
+    padding:20px;
     text-align:center;
-    padding:40px 20px;
     border-bottom:1px solid rgba(255,215,0,.2);
 }
 
-.logo{
-    font-size:42px;
+header h1{
     color:gold;
-    font-weight:bold;
 }
 
-.subtitle{
-    color:silver;
-    margin-top:8px;
-}
-
-.search{
-    text-align:center;
-    padding:20px;
-}
-
-.search input{
-    width:80%;
-    max-width:600px;
-    padding:15px;
-    border-radius:10px;
-    border:none;
-    background:#1a1a1a;
-    color:white;
-}
-
-.filters{
-    text-align:center;
-    margin:10px;
-}
-
-.filters select{
+/* NAV */
+nav{
+    display:flex;
+    justify-content:center;
+    gap:10px;
     padding:10px;
+}
+
+nav button{
     background:#1a1a1a;
-    color:white;
     border:none;
+    color:white;
+    padding:10px 15px;
     border-radius:8px;
+    cursor:pointer;
 }
 
-.grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-    gap:15px;
+nav button.active{
+    background:gold;
+    color:black;
+}
+
+/* SECTIONS */
+section{
+    display:none;
     padding:20px;
 }
 
+section.active{
+    display:block;
+}
+
+/* CARDS */
 .card{
-    background:linear-gradient(145deg,#111,#1a1a1a);
+    background:#141414;
+    padding:15px;
+    margin:10px auto;
+    border-radius:10px;
+    max-width:500px;
     border:1px solid rgba(255,215,0,.2);
-    padding:20px;
-    border-radius:12px;
 }
 
-.card h3{
-    color:gold;
-}
-
-.card p{
-    color:silver;
-    margin:5px 0;
+input, select{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+    border:none;
+    border-radius:6px;
+    background:#222;
+    color:white;
 }
 
 button{
-    margin-top:10px;
-    background:gold;
-    border:none;
     padding:10px;
-    width:100%;
-    border-radius:8px;
-    cursor:pointer;
+    border:none;
+    border-radius:6px;
+    background:gold;
+    color:black;
     font-weight:bold;
-}
-    
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(12px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-    .card {
-    opacity: 1;
-}
-.card {
-    transition: 0.3s;
+    cursor:pointer;
+    width:100%;
 }
 
-.card:hover {
-    transform: scale(1.03);
-    box-shadow: 0 0 20px rgba(255,215,0,0.2);
+.small-btn{
+    width:auto;
+    padding:5px 10px;
+    margin-top:5px;
 }
 </style>
 </head>
@@ -124,26 +98,44 @@ button{
 <body>
 
 <header>
-    <div class="logo">◆ LUNAR COASTAL</div>
-    <div class="subtitle">Live DJ Music Library</div>
+    <h1>◆ LUNAR COASTAL DJ HUB</h1>
 </header>
 
-<div class="search">
-    <input id="searchInput" placeholder="Search songs or DJs...">
-</div>
+<nav>
+    <button onclick="showTab('home')" class="active">Home</button>
+    <button onclick="showTab('upload')">Upload</button>
+    <button onclick="showTab('admin')">Admin</button>
+</nav>
 
-<div class="filters">
-    <select id="djFilter">
-        <option value="all">All DJs</option>
-    </select>
-</div>
+<!-- HOME -->
+<section id="home" class="active">
+    <h2>Live Songs</h2>
+    <div id="songs"></div>
+</section>
 
-<div class="grid" id="songs"></div>
+<!-- UPLOAD -->
+<section id="upload">
+    <h2>DJ Upload</h2>
+
+    <div class="card">
+        <input id="djcode" placeholder="DJ Code">
+        <input id="title" placeholder="Song Title">
+        <input id="code" placeholder="Music Code">
+        <button onclick="submitSong()">Submit</button>
+        <p id="status"></p>
+    </div>
+</section>
+
+<!-- ADMIN -->
+<section id="admin">
+    <h2>Admin Panel</h2>
+    <div id="pending"></div>
+</section>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs } 
+import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, serverTimestamp } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -158,104 +150,123 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let allSongs = [];
+/* DJ CODES */
+const djCodes = {
+  "LOU-88421":"Lou",
+  "NOX-19382":"Nox",
+  "VIV-55210":"Viv",
+  "FRO-77421":"Frosch",
+  "GIO-99120":"Gio",
+  "SOL-11293":"Soll",
+  "MOO-88210":"Moozy",
+  "SOF-55102":"Sofi",
+  "ZEI-77190":"Zei",
+  "CAM-44123":"Cams",
+  "DAM-33210":"Damon",
+  "LAN-88291":"Lans",
+  "LEE-22190":"Lee",
+  "MAX-99201":"Maxinah",
+  "TOK-11923":"Tokyo",
+  "TRE-55441":"Trell",
+  "ZOD-77881":"Zodi"
+};
 
-const songsContainer = document.getElementById("songs");
-const searchInput = document.getElementById("searchInput");
-const djFilter = document.getElementById("djFilter");
+let songs = [];
+let pending = [];
 
-// ✨ Render songs with animation + empty state
-function renderSongs(list){
-    songsContainer.innerHTML = "";
+/* TAB SYSTEM */
+window.showTab = function(tab){
+    document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
+    document.getElementById(tab).classList.add("active");
 
-    if(list.length === 0){
-        songsContainer.innerHTML = `
-            <p style="text-align:center;color:gray;animation:fadeIn 0.5s;">
-                No results found 😔
-            </p>`;
+    document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+}
+
+/* SUBMIT */
+window.submitSong = async function(){
+
+    const code = document.getElementById("djcode").value;
+    const title = document.getElementById("title").value;
+    const music = document.getElementById("code").value;
+    const status = document.getElementById("status");
+
+    if(!code || !title || !music){
+        status.innerText = "Fill all fields";
         return;
     }
 
-    list.forEach((song, index) => {
-        const div = document.createElement("div");
-        div.className = "card";
+    const dj = djCodes[code];
 
-        // fade-in animation delay
-        div.style.opacity = "0";
-        div.style.transform = "translateY(10px)";
-        div.style.animation = `fadeInUp 0.4s ease forwards ${index * 0.05}s`;
+    if(!dj){
+        status.innerText = "Invalid DJ Code";
+        return;
+    }
 
-        div.innerHTML = `
-            <h3>${song.title}</h3>
-            <p>DJ: ${song.dj}</p>
-            <p id="${song.code}">${song.code}</p>
-            <button onclick="copyCode('${song.code}')">Copy Code</button>
-        `;
-
-        songsContainer.appendChild(div);
+    await addDoc(collection(db,"pendingSongs"),{
+        dj,
+        title,
+        code: music,
+        status:"pending",
+        createdAt:serverTimestamp()
     });
+
+    status.innerText = "Submitted!";
 }
 
-// 📋 Copy function
-window.copyCode = function(code){
-    navigator.clipboard.writeText(code);
-    alert("Copied: " + code);
-}
-
-// 🔥 Load Firestore songs
+/* LOAD SONGS */
 async function loadSongs(){
-    const snapshot = await getDocs(collection(db,"songs"));
+    const snap = await getDocs(collection(db,"songs"));
+    songs = snap.docs.map(d => d.data());
 
-    allSongs = [];
+    document.getElementById("songs").innerHTML =
+    songs.map(s => `
+        <div class="card">
+            <h3>${s.title}</h3>
+            <p>${s.dj}</p>
+            <p>${s.code}</p>
+        </div>
+    `).join("");
+}
 
-    snapshot.forEach(doc => {
-        allSongs.push(doc.data());
+/* LOAD PENDING */
+async function loadPending(){
+    const snap = await getDocs(collection(db,"pendingSongs"));
+    pending = snap.docs.map(d => ({id:d.id, ...d.data()}));
+
+    document.getElementById("pending").innerHTML =
+    pending.map(p => `
+        <div class="card">
+            <h3>${p.title}</h3>
+            <p>${p.dj}</p>
+
+            <button class="small-btn" onclick="approve('${p.id}', '${p.title}', '${p.dj}', '${p.code}')">
+                Approve
+            </button>
+        </div>
+    `).join("");
+}
+
+/* APPROVE */
+window.approve = async function(id,title,dj,code){
+
+    await addDoc(collection(db,"songs"),{
+        title,
+        dj,
+        code,
+        createdAt:serverTimestamp()
     });
 
-    populateDJFilter();
-    renderSongs(allSongs);
-}
-
-// 🎛️ Auto DJ filter
-function populateDJFilter(){
-    const djs = [...new Set(allSongs.map(s => s.dj))];
-
-    djFilter.innerHTML = `<option value="all">All DJs</option>`;
-
-    djs.forEach(dj => {
-        const option = document.createElement("option");
-        option.value = dj;
-        option.textContent = dj;
-        djFilter.appendChild(option);
+    await updateDoc(doc(db,"pendingSongs",id),{
+        status:"approved"
     });
+
+    loadSongs();
+    loadPending();
 }
 
-// 🔍 Search + Filter logic
-function filterSongs(){
-    let filtered = allSongs;
-
-    const search = searchInput.value.toLowerCase();
-    const selectedDJ = djFilter.value;
-
-    if(selectedDJ !== "all"){
-        filtered = filtered.filter(song => song.dj === selectedDJ);
-    }
-
-    if(search){
-        filtered = filtered.filter(song =>
-            song.title.toLowerCase().includes(search) ||
-            song.dj.toLowerCase().includes(search)
-        );
-    }
-
-    renderSongs(filtered);
-}
-
-// 🎯 Events
-searchInput.addEventListener("input", filterSongs);
-djFilter.addEventListener("change", filterSongs);
-
+/* INIT */
 loadSongs();
+loadPending();
 
 </script>
 
