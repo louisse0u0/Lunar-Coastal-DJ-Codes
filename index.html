@@ -1,45 +1,169 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>DJ Codes Hub</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #121212;
-            color: white;
-            text-align: center;
-            padding: 30px;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lunar Coastal DJ Library</title>
 
-        .song {
-            background: #1f1f1f;
-            margin: 10px auto;
-            padding: 15px;
-            width: 300px;
-            border-radius: 10px;
-        }
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, sans-serif;
+}
 
-        button {
-            padding: 8px 15px;
-            cursor: pointer;
-        }
-    </style>
+body{
+    background:#0b0b0b;
+    color:white;
+}
+
+header{
+    text-align:center;
+    padding:40px 20px;
+    border-bottom:1px solid rgba(255,215,0,.2);
+}
+
+.logo{
+    font-size:42px;
+    color:gold;
+    font-weight:bold;
+}
+
+.subtitle{
+    color:silver;
+    margin-top:10px;
+}
+
+.search-container{
+    text-align:center;
+    padding:30px;
+}
+
+.search-container input{
+    width:80%;
+    max-width:600px;
+    padding:15px;
+    border:none;
+    border-radius:10px;
+    background:#1a1a1a;
+    color:white;
+    font-size:16px;
+}
+
+.filters{
+    text-align:center;
+    margin-bottom:30px;
+}
+
+.filters select{
+    padding:10px;
+    border-radius:8px;
+    background:#1a1a1a;
+    color:white;
+}
+
+.song-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:20px;
+    padding:20px;
+}
+
+.song{
+    background:linear-gradient(145deg,#111,#1a1a1a);
+    border:1px solid rgba(255,215,0,.2);
+    border-radius:15px;
+    padding:20px;
+}
+
+.song h3{
+    color:gold;
+}
+
+.song p{
+    color:silver;
+    margin:10px 0;
+}
+
+button{
+    background:gold;
+    color:black;
+    border:none;
+    padding:10px 15px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+button:hover{
+    opacity:.9;
+}
+
+footer{
+    text-align:center;
+    color:gray;
+    padding:40px;
+}
+</style>
 </head>
+
 <body>
 
-<h1>🎵 DJ Codes Hub</h1>
+<header>
+    <div class="logo">◆ LUNAR COASTAL</div>
+    <div class="subtitle">Premium DJ Music Library</div>
+</header>
 
-<div class="song">
-    <h3>Dinero</h3>
-    <p id="code1">123456789</p>
-    <button onclick="copyCode('code1')">Copy Code</button>
+<div class="search-container">
+    <input type="text" id="searchInput" placeholder="Search songs...">
 </div>
 
-<div class="song">
-    <h3>Titanium</h3>
-    <p id="code2">987654321</p>
-    <button onclick="copyCode('code2')">Copy Code</button>
+<div class="filters">
+    <select id="djFilter">
+        <option value="all">All DJs</option>
+        <option>DJ Lou</option>
+        <option>DJ Viv</option>
+        <option>DJ Frosch</option>
+        <option>DJ Gio</option>
+        <option>DJ Soll</option>
+        <option>DJ Nox</option>
+        <option>DJ Moozy</option>
+        <option>DJ Sofi</option>
+        <option>DJ Zei</option>
+        <option>DJ Cams</option>
+        <option>DJ Damon</option>
+        <option>DJ Lans</option>
+        <option>DJ Lee</option>
+        <option>DJ Mav</option>
+        <option>DJ Maxinah</option>
+        <option>DJ Tokyo</option>
+        <option>DJ Trell</option>
+        <option>DJ Zodi</option>
+    </select>
 </div>
+
+<div class="song-grid">
+
+    <div class="song">
+        <h3>Titanium</h3>
+        <p>DJ Lou</p>
+        <p id="code1">123456789</p>
+        <button onclick="copyCode('code1')">Copy Code</button>
+    </div>
+
+    <div class="song">
+        <h3>Dinero</h3>
+        <p>DJ Viv</p>
+        <p id="code2">987654321</p>
+        <button onclick="copyCode('code2')">Copy Code</button>
+    </div>
+
+</div>
+
+<footer>
+    Lunar Coastal DJ Library © 2026
+</footer>
 
 <script>
 function copyCode(id){
