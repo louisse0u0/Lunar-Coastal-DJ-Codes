@@ -224,6 +224,41 @@ select:focus{
     border:1px solid rgba(255,0,204,.4);
     box-shadow:0 0 12px rgba(255,0,204,.25);
 }
+
+.playlistActions{
+    display:flex;
+    gap:6px;
+    margin-top:10px;
+}
+
+.playlistActions button{
+    flex:1;
+    margin:0;
+    font-size:12px;
+    padding:7px;
+}
+
+.playlistSong{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#1a1a1a;
+    border-radius:8px;
+    padding:8px;
+    margin-top:8px;
+}
+
+.songActions{
+    display:flex;
+    gap:5px;
+}
+
+.miniBtn{
+    width:auto !important;
+    margin:0;
+    padding:5px 10px;
+    font-size:11px;
+}
     
 </style>
 </head>
@@ -362,10 +397,21 @@ select:focus{
 
     <h2>My Playlists</h2>
 
-    <button class="glow"
-    onclick="createPlaylist()">
-    + Create Playlist
-    </button>
+    <div class="card" style="margin-bottom:15px;">
+
+        <input
+        id="newPlaylistName"
+        placeholder="Playlist Name">
+
+        <button
+        class="glow"
+        onclick="createPlaylist()">
+
+        + Create Playlist
+
+        </button>
+
+    </div>
 
     <div id="playlistContainer"></div>
 
@@ -647,20 +693,25 @@ window.submitSong = async ()=>{
 window.createPlaylist = async ()=>{
 
     const name =
-    prompt("Playlist name:");
+    document
+    .getElementById("newPlaylistName")
+    .value
+    .trim();
 
     if(!name) return;
 
     await addDoc(collection(db,"playlists"),{
 
-        name:name,
-
+        name,
         owner:currentDJ,
-
         songs:[],
-
         createdAt:serverTimestamp()
+
     });
+
+    document
+    .getElementById("newPlaylistName")
+    .value = "";
 
     loadPlaylists();
 };
@@ -768,6 +819,149 @@ async(playlistId,index)=>{
     loadPlaylists();
 };
 
+window.toggleRename = (id)=>{
+
+    const box =
+    document.getElementById(
+    `rename-${id}`
+    );
+
+    box.style.display =
+    box.style.display === "none"
+    ? "block"
+    : "none";
+};
+
+window.saveRename = async(id)=>{
+
+    const value =
+    document
+    .getElementById(
+    `renameInput-${id}`
+    )
+    .value
+    .trim();
+
+    if(!value) return;
+
+    await updateDoc(
+        doc(db,"playlists",id),
+        {
+            name:value
+        }
+    );
+
+    loadPlaylists();
+};
+
+window.toggleSongSearch = (id)=>{
+
+    const area =
+    document.getElementById(
+    `searchArea-${id}`
+    );
+
+    area.style.display =
+    area.style.display === "none"
+    ? "block"
+    : "none";
+
+    if(area.style.display==="block"){
+
+        document
+        .getElementById(
+        `songSearch-${id}`
+        )
+        .oninput = ()=>searchSongs(id);
+    }
+};
+
+window.searchSongs = (playlistId)=>{
+
+    const search =
+    document
+    .getElementById(
+    `songSearch-${playlistId}`
+    )
+    .value
+    .toLowerCase();
+
+    const results =
+    songs.filter(s=>
+        s.title
+        .toLowerCase()
+        .includes(search)
+    );
+
+    document
+    .getElementById(
+    `songResults-${playlistId}`
+    )
+    .innerHTML =
+    results.map(s=>`
+
+        <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        background:#1a1a1a;
+        padding:6px;
+        border-radius:8px;
+        margin-top:6px;
+        ">
+
+            <span>
+            ${s.title}
+            </span>
+
+            <button
+            class="glow"
+            style="
+            width:auto;
+            padding:5px 10px;
+            "
+            onclick="
+            addSongDirect(
+            '${playlistId}',
+            '${s.id}'
+            )">
+
+            Add
+
+            </button>
+
+        </div>
+
+    `).join("");
+};
+
+window.addSongDirect =
+async(playlistId,songId)=>{
+
+    const playlist =
+    playlists.find(
+    p=>p.id===playlistId
+    );
+
+    const song =
+    songs.find(
+    s=>s.id===songId
+    );
+
+    if(!song) return;
+
+    playlist.songs.push(song);
+
+    await updateDoc(
+        doc(db,"playlists",playlistId),
+        {
+            songs:playlist.songs
+        }
+    );
+
+    loadPlaylists();
+};
+
 function renderPlaylists(){
 
     const mine =
@@ -778,7 +972,7 @@ function renderPlaylists(){
     );
 
     document.getElementById(
-        "playlistContainer"
+    "playlistContainer"
     ).innerHTML = mine.map(p=>`
 
         <div class="card">
@@ -790,53 +984,98 @@ function renderPlaylists(){
             ${p.songs?.length || 0}
             </p>
 
-            <button
-            onclick="renamePlaylist('${p.id}')">
-            Rename
-            </button>
+            <div class="playlistActions">
 
-            <button
-            onclick="addSongToPlaylist('${p.id}')">
-            Add Song
-            </button>
+                <button
+                onclick="toggleRename('${p.id}')">
+                Rename
+                </button>
 
-            <button
-            onclick="deletePlaylist('${p.id}')">
-            Delete Playlist
-            </button>
+                <button
+                onclick="toggleSongSearch('${p.id}')">
+                Add Song
+                </button>
+
+                <button
+                onclick="deletePlaylist('${p.id}')">
+                Delete
+                </button>
+
+            </div>
+
+            <div
+            id="rename-${p.id}"
+            style="display:none; margin-top:10px;">
+
+                <input
+                id="renameInput-${p.id}"
+                value="${p.name}">
+
+                <button
+                class="glow"
+                onclick="saveRename('${p.id}')">
+
+                Save
+
+                </button>
+
+            </div>
+
+            <div
+            id="searchArea-${p.id}"
+            style="display:none; margin-top:10px;">
+
+                <input
+                id="songSearch-${p.id}"
+                placeholder="Search song...">
+
+                <div
+                id="songResults-${p.id}">
+                </div>
+
+            </div>
 
             <hr>
 
             ${(p.songs || []).map((song,index)=>`
 
-                <div
-                style="
-                margin-top:8px;
-                padding:8px;
-                background:#1a1a1a;
-                border-radius:8px;
-                ">
+                <div class="playlistSong">
 
-                    <b>${song.title}</b>
+                    <div>
 
-                    <br>
+                        <b>${song.title}</b>
 
-                    ${song.code}
+                        <br>
 
-                    <button
-                    class="glow"
-                    onclick="copyCode('${song.code}')">
-                    Copy
-                    </button>
+                        <small>
+                        ${song.code}
+                        </small>
 
-                    <button
-                    onclick="
-                    removeSongFromPlaylist(
-                    '${p.id}',
-                    ${index}
-                    )">
-                    Remove
-                    </button>
+                    </div>
+
+                    <div class="songActions">
+
+                        <button
+                        class="glow miniBtn"
+                        onclick="copyCode('${song.code}')">
+
+                        Copy
+
+                        </button>
+
+                        <button
+                        class="miniBtn"
+                        onclick="
+                        removeSongFromPlaylist(
+                        '${p.id}',
+                        ${index}
+                        )">
+
+                        ✕
+
+                        </button>
+
+                    </div>
 
                 </div>
 
