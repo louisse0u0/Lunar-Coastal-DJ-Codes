@@ -274,12 +274,15 @@ select:focus{
 
 <!-- HOME -->
 <section id="home" class="active">
+    <h2>Public Codes</h2>
+    <p id="homeTotal">Total Songs: 0</p>
     <div class="container" id="songs"></div>
 </section>
 
 <!-- PRIVATE -->
 <section id="private">
     <h2>My Private Uploads</h2>
+    <p id="privateTotal">Total Songs: 0</p>
     <div class="container" id="privateSongs"></div>
 </section>
 
@@ -327,6 +330,7 @@ select:focus{
 <!-- ADMIN -->
 <section id="admin">
     <h2>Admin Panel</h2>
+    <p id="adminTotal">Total Songs: 0</p>
     <div class="container" id="adminSongs"></div>
 </section>
 
@@ -529,9 +533,23 @@ function applyFilters(){
         return matchSearch && matchDJ && matchPitch;
     });
 
-    renderSongs(filtered);
-    renderPrivate(filtered);
-    renderAdmin(filtered);
+    // PUBLIC view (IMPORTANT: respects visibility)
+    const publicList = filtered.filter(s => s.visibility !== "private");
+
+    // PRIVATE view
+    const privateList = filtered.filter(s =>
+        s.visibility === "private" &&
+        (role === "admin" || s.dj === currentDJ)
+    );
+
+    // ADMIN view
+    const adminList = filtered;
+
+    renderSongs(publicList);
+    renderPrivate(privateList);
+    renderAdmin(adminList);
+
+    updateTotals(publicList, privateList, adminList);
 }
 
 document.getElementById("searchInput")
@@ -622,10 +640,19 @@ async function loadSongs(){
         (a.title || "").localeCompare(b.title || "")
     );
 
-     populateFilters();
+    populateFilters();
     renderSongs(songs);
     renderAdmin(songs);
     renderPrivate(songs);
+
+    updateTotals(
+        songs.filter(s => s.visibility !== "private"),
+        songs.filter(s =>
+            s.visibility === "private" &&
+            (role === "admin" || s.dj === currentDJ)
+        ),
+        songs
+    );
 }
     
 function populateFilters(){
@@ -659,6 +686,18 @@ function populateFilters(){
         pitchFilter.innerHTML +=
             `<option value="${pitch}">${pitch}</option>`;
     });
+}
+
+function updateTotals(homeList, privateList, adminList){
+
+    document.getElementById("homeTotal").innerText =
+        "Total Songs: " + homeList.length;
+
+    document.getElementById("privateTotal").innerText =
+        "Total Songs: " + privateList.length;
+
+    document.getElementById("adminTotal").innerText =
+        "Total Songs: " + adminList.length;
 }
     
 /* RENDER (FIXED) */
@@ -765,6 +804,15 @@ window.deleteSong = async (id)=>{
     renderPrivate(songs);
     renderAdmin(songs);
     renderManage(songs);
+
+    updateTotals(
+    songs.filter(s => s.visibility !== "private"),
+    songs.filter(s =>
+        s.visibility === "private" &&
+        (role === "admin" || s.dj === currentDJ)
+    ),
+    songs
+);
 
     // 3. delete from firestore in background
     await deleteDoc(doc(db,"songs",id));
