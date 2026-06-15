@@ -66,7 +66,7 @@ button:hover{
 
 <div class="card">
 
-<input id="username" placeholder="Roblox Username">
+<input id="djcode" placeholder="DJ Code (e.g. LOU-88421)">
 <input id="title" placeholder="Song Title">
 <input id="code" placeholder="Music Code">
 
@@ -93,41 +93,47 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ✅ DJ mapping (CORRECT PLACE)
-const djNames = {
-  "louisse0u0": "DJ Lou",
-  "v1rg0gh": "DJ Nox",
-  "4vieve": "DJ Viv",
+// 🔐 DJ CODE LOGIN SYSTEM (SECURE)
+const djCodes = {
+  "LOU-88421": "DJ Lou",
+  "NOX-19382": "DJ Nox",
+  "VIV-55210": "DJ Viv",
 
-  "Froschh07": "DJ Frosch",
-  "chislon": "DJ Gio",
-  "ELSUTRAN30": "DJ Soll",
-  "dumpnimoozy": "DJ Moozy",
-  "Se0_pii": "DJ Sofi",
-  "neirvu": "DJ Zei",
-  "charlenelu15": "DJ Cams",
-  "cambiarepax": "DJ Damon",
-  "crazyy7yo": "DJ Lans",
-  "FatherDuckly": "DJ Lee",
-  "LouXieEr": "DJ Maxinah",
-  "bigmouseph": "DJ Tokyo",
-  "SunggSuho": "DJ Trell",
-  "zodipogi": "DJ Zodi"
+  "FRO-77421": "DJ Frosch",
+  "GIO-99120": "DJ Gio",
+  "SOL-11293": "DJ Soll",
+  "MOO-88210": "DJ Moozy",
+  "SOF-55102": "DJ Sofi",
+  "ZEI-77190": "DJ Zei",
+  "CAM-44123": "DJ Cams",
+  "DAM-33210": "DJ Damon",
+  "LAN-88291": "DJ Lans",
+  "LEE-22190": "DJ Lee",
+  "MAX-99201": "DJ Maxinah",
+  "TOK-11923": "DJ Tokyo",
+  "TRE-55441": "DJ Trell",
+  "ZOD-77881": "DJ Zodi"
 };
 
 window.submitSong = async function(){
 
-    const username = document.getElementById("username").value;
+    const djcode = document.getElementById("djcode").value;
     const title = document.getElementById("title").value;
     const code = document.getElementById("code").value;
     const status = document.getElementById("status");
 
-    if(!username || !title || !code){
+    if(!djcode || !title || !code){
         status.innerText = "Please fill all fields.";
         return;
     }
 
-    const displayDJ = djNames[username] || username;
+    // 🔐 VERIFY DJ CODE
+    const displayDJ = djCodes[djcode];
+
+    if(!displayDJ){
+        status.innerText = "Access denied ❌ Invalid DJ Code.";
+        return;
+    }
 
     try {
         await addDoc(collection(db, "pendingSongs"), {
@@ -140,7 +146,7 @@ window.submitSong = async function(){
 
         status.innerText = "Submitted for approval ✅";
 
-        document.getElementById("username").value = "";
+        document.getElementById("djcode").value = "";
         document.getElementById("title").value = "";
         document.getElementById("code").value = "";
 
