@@ -439,29 +439,25 @@ window.showTab = (tab)=>{
     document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
     document.getElementById(tab).classList.add("active");
 
-    document.getElementById("searchBar").style.display =
-        (tab === "home") ? "flex" : "none";
+    // KEEP SEARCH ALWAYS VISIBLE (IMPORTANT FIX)
+    document.getElementById("searchBar").style.display = "flex";
 
+    if(tab === "home") renderSongs(songs);
     if(tab === "private") renderPrivate(songs);
     if(tab === "admin") renderAdmin(songs);
-    if(tab === "home") renderSongs(songs);
 };
     
 /* SEARCH */
 function applyFilters(){
 
     const search =
-        document.getElementById("searchInput")
-        .value
-        .toLowerCase();
+        document.getElementById("searchInput").value.toLowerCase();
 
     const dj =
-        document.getElementById("djFilter")
-        .value;
+        document.getElementById("djFilter").value;
 
     const pitch =
-        document.getElementById("pitchFilter")
-        .value;
+        document.getElementById("pitchFilter").value;
 
     const filtered = songs.filter(s => {
 
@@ -471,20 +467,14 @@ function applyFilters(){
             s.dj.toLowerCase().includes(search) ||
             s.code.toLowerCase().includes(search);
 
-        const matchDJ =
-            !dj || s.dj === dj;
+        const matchDJ = !dj || s.dj === dj;
+        const matchPitch = !pitch || s.pitch === pitch;
 
-        const matchPitch =
-            !pitch || s.pitch === pitch;
-
-        return (
-            matchSearch &&
-            matchDJ &&
-            matchPitch
-        );
+        return matchSearch && matchDJ && matchPitch;
     });
 
     renderSongs(filtered);
+    renderPrivate(filtered);
     renderAdmin(filtered);
 }
 
@@ -614,7 +604,7 @@ function renderSongs(list = songs){
         </div>
     `).join("");
 }
-
+    
 function renderPrivate(list = songs){
 
     if(role !== "dj" && role !== "admin") return;
@@ -631,6 +621,10 @@ function renderPrivate(list = songs){
             <p>Pitch: ${s.pitch}</p>
             <p>DJ: ${s.dj}</p>
             <p>ID: ${s.code}</p>
+
+            <button class="glow" onclick="copyCode('${s.code}')">
+                Copy
+            </button>
         </div>
     `).join("");
 }
