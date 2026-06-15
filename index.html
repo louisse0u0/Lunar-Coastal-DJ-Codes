@@ -138,9 +138,17 @@ const db = getFirestore(app);
 
 let allSongs = [];
 
+const songsContainer = document.getElementById("songs");
+const searchInput = document.getElementById("searchInput");
+const djFilter = document.getElementById("djFilter");
+
 function renderSongs(list){
-    const container = document.getElementById("songs");
-    container.innerHTML = "";
+    songsContainer.innerHTML = "";
+
+    if(list.length === 0){
+        songsContainer.innerHTML = "<p style='text-align:center;color:gray'>No songs found</p>";
+        return;
+    }
 
     list.forEach(song => {
         const div = document.createElement("div");
@@ -153,7 +161,7 @@ function renderSongs(list){
             <button onclick="copyCode('${song.code}')">Copy Code</button>
         `;
 
-        container.appendChild(div);
+        songsContainer.appendChild(div);
     });
 }
 
@@ -162,6 +170,7 @@ window.copyCode = function(code){
     alert("Copied: " + code);
 }
 
+// 🔥 Load songs from Firebase
 async function loadSongs(){
     const snapshot = await getDocs(collection(db,"songs"));
 
@@ -171,8 +180,48 @@ async function loadSongs(){
         allSongs.push(doc.data());
     });
 
+    populateDJFilter();
     renderSongs(allSongs);
 }
+
+// 🎛️ Build DJ dropdown automatically
+function populateDJFilter(){
+    const djs = [...new Set(allSongs.map(s => s.dj))];
+
+    djFilter.innerHTML = `<option value="all">All DJs</option>`;
+
+    djs.forEach(dj => {
+        const option = document.createElement("option");
+        option.value = dj;
+        option.textContent = dj;
+        djFilter.appendChild(option);
+    });
+}
+
+// 🔍 Filter system (SEARCH + DJ)
+function filterSongs(){
+    let filtered = allSongs;
+
+    const search = searchInput.value.toLowerCase();
+    const selectedDJ = djFilter.value;
+
+    if(selectedDJ !== "all"){
+        filtered = filtered.filter(song => song.dj === selectedDJ);
+    }
+
+    if(search){
+        filtered = filtered.filter(song =>
+            song.title.toLowerCase().includes(search) ||
+            song.dj.toLowerCase().includes(search)
+        );
+    }
+
+    renderSongs(filtered);
+}
+
+// 🎯 Events
+searchInput.addEventListener("input", filterSongs);
+djFilter.addEventListener("change", filterSongs);
 
 loadSongs();
 
