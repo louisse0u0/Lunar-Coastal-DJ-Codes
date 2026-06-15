@@ -439,8 +439,12 @@ window.showTab = (tab)=>{
     document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
     document.getElementById(tab).classList.add("active");
 
+    // SHOW SEARCH IN MULTIPLE TABS
+    const showSearch =
+        (tab === "home" || tab === "private" || tab === "admin");
+
     document.getElementById("searchBar").style.display =
-        (tab === "home") ? "flex" : "none";
+        showSearch ? "flex" : "none";
 
     if(tab === "home") renderSongs(songs);
     if(tab === "private") renderPrivate(songs);
