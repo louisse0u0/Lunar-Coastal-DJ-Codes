@@ -251,6 +251,7 @@ select:focus{
     <button onclick="showTab('private')" id="privateTab" style="display:none;">Private Codes</button>
     <button id="uploadTab" onclick="showTab('upload')" style="display:none;">Upload</button>
     <button id="adminTab" onclick="showTab('admin')" style="display:none;">Admin</button>
+    <button id="playlistTab"onclick="showTab('playlists')"style="display:none;">Playlists</button>
 </nav>
 
 <button id="manageTab" onclick="showTab('manage')" style="display:none;">
@@ -357,11 +358,23 @@ select:focus{
     <div class="container" id="manageSongs"></div>
 </section>
 
+<section id="playlists">
+
+    <h2>My Playlists</h2>
+
+    <button class="glow"
+    onclick="createPlaylist()">
+    + Create Playlist
+    </button>
+
+    <div id="playlistContainer"></div>
+
+</section>
+
 <!-- MODULE -->
     
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
 getFirestore,
 collection,
@@ -369,6 +382,7 @@ addDoc,
 getDocs,
 deleteDoc,
 doc,
+updateDoc,
 serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -417,6 +431,7 @@ let role = sessionStorage.getItem("role") || "guest";
 let currentDJ = sessionStorage.getItem("djName") || "";
 let songs = [];
 let manageVisibility = "all";
+let playlists = [];
 
 /* ACCESS */
 
@@ -466,9 +481,8 @@ function unlockUI(){
     document.getElementById("uploadTab").style.display = "inline-block";
     document.getElementById("privateTab").style.display = (role === "dj" || role === "admin") ? "inline-block" : "none";
     document.getElementById("adminTab").style.display = role === "admin" ? "inline-block" : "none";
-    
-    document.getElementById("manageTab").style.display =
-    (role === "dj" || role === "admin") ? "inline-block" : "none";
+    document.getElementById("manageTab").style.display = (role === "dj" || role === "admin") ? "inline-block" : "none";
+    document.getElementById("playlistTab").style.display = (role === "dj" || role === "admin") ? "inline-block" : "none";
 }
 
 /* TAB */
@@ -502,6 +516,7 @@ window.showTab = (tab)=>{
     if(tab === "private") renderPrivate(songs);
     if(tab === "admin") renderAdmin(songs);
     if(tab === "manage") renderManage(songs);
+    if(tab === "playlists") renderPlaylists();
 
     // SAVE LAST TAB (NEW)
     sessionStorage.setItem("lastTab", tab);
@@ -625,6 +640,209 @@ window.submitSong = async ()=>{
 
     loadSongs(); // IMPORTANT
 };
+
+window.createPlaylist = async ()=>{
+
+    const name =
+    prompt("Playlist name:");
+
+    if(!name) return;
+
+    await addDoc(collection(db,"playlists"),{
+
+        name:name,
+
+        owner:currentDJ,
+
+        songs:[],
+
+        createdAt:serverTimestamp()
+    });
+
+    loadPlaylists();
+};
+
+window.renamePlaylist = async(id)=>{
+
+    const playlist =
+    playlists.find(p=>p.id===id);
+
+    const newName =
+    prompt("Rename playlist:",playlist.name);
+
+    if(!newName) return;
+
+    await updateDoc(
+        doc(db,"playlists",id),
+        {
+            name:newName
+        }
+    );
+
+    loadPlaylists();
+};
+
+window.deletePlaylist = async(id)=>{
+
+    if(!confirm("Delete playlist?"))
+        return;
+
+    await deleteDoc(
+        doc(db,"playlists",id)
+    );
+
+    loadPlaylists();
+};
+
+window.addSongToPlaylist = async(id)=>{
+
+    const search =
+    prompt("Search song title:");
+
+    if(!search) return;
+
+    const results =
+    songs.filter(s =>
+        s.title.toLowerCase()
+        .includes(search.toLowerCase())
+    );
+
+    if(results.length === 0){
+
+        alert("No songs found");
+
+        return;
+    }
+
+    const list =
+    results.map((s,i)=>
+        `${i+1}. ${s.title}`
+    ).join("\n");
+
+    const choice =
+    prompt(
+        list +
+        "\n\nType number:"
+    );
+
+    const selected =
+    results[Number(choice)-1];
+
+    if(!selected) return;
+
+    const playlist =
+    playlists.find(p=>p.id===id);
+
+    playlist.songs.push(selected);
+
+    await updateDoc(
+        doc(db,"playlists",id),
+        {
+            songs:playlist.songs
+        }
+    );
+
+    loadPlaylists();
+};
+
+window.removeSongFromPlaylist =
+async(playlistId,index)=>{
+
+    const playlist =
+    playlists.find(
+        p=>p.id===playlistId
+    );
+
+    playlist.songs.splice(index,1);
+
+    await updateDoc(
+        doc(db,"playlists",playlistId),
+        {
+            songs:playlist.songs
+        }
+    );
+
+    loadPlaylists();
+};
+
+function renderPlaylists(){
+
+    const mine =
+    playlists.filter(p =>
+        role === "admin"
+        ? true
+        : p.owner === currentDJ
+    );
+
+    document.getElementById(
+        "playlistContainer"
+    ).innerHTML = mine.map(p=>`
+
+        <div class="card">
+
+            <h3>${p.name}</h3>
+
+            <p>
+            Songs:
+            ${p.songs?.length || 0}
+            </p>
+
+            <button
+            onclick="renamePlaylist('${p.id}')">
+            Rename
+            </button>
+
+            <button
+            onclick="addSongToPlaylist('${p.id}')">
+            Add Song
+            </button>
+
+            <button
+            onclick="deletePlaylist('${p.id}')">
+            Delete Playlist
+            </button>
+
+            <hr>
+
+            ${(p.songs || []).map((song,index)=>`
+
+                <div
+                style="
+                margin-top:8px;
+                padding:8px;
+                background:#1a1a1a;
+                border-radius:8px;
+                ">
+
+                    <b>${song.title}</b>
+
+                    <br>
+
+                    ${song.code}
+
+                    <button
+                    class="glow"
+                    onclick="copyCode('${song.code}')">
+                    Copy
+                    </button>
+
+                    <button
+                    onclick="
+                    removeSongFromPlaylist(
+                    '${p.id}',
+                    ${index}
+                    )">
+                    Remove
+                    </button>
+
+                </div>
+
+            `).join("")}
+
+        </div>
+
+    `).join("");
+}
     
 /* LOAD SONGS */
 async function loadSongs(){
@@ -653,6 +871,19 @@ async function loadSongs(){
         ),
         songs
     );
+}
+
+async function loadPlaylists(){
+
+    const snap =
+    await getDocs(collection(db,"playlists"));
+
+    playlists = snap.docs.map(d=>({
+        id:d.id,
+        ...d.data()
+    }));
+
+    renderPlaylists();
 }
     
 function populateFilters(){
@@ -820,6 +1051,8 @@ window.deleteSong = async (id)=>{
 
 /* INIT */
 loadSongs();
+loadPlaylists();
+    
 window.onload = () => {
 
     // restore UI if logged in
