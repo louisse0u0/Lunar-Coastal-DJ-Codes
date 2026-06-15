@@ -3,21 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DJ Upload Portal</title>
+<title>Lunar Coastal DJ Upload</title>
 
 <style>
 body{
     background:#0b0b0b;
     color:white;
-    font-family:Arial,sans-serif;
+    font-family:Arial;
     max-width:700px;
     margin:auto;
     padding:40px 20px;
 }
 
 h1{
-    color:gold;
     text-align:center;
+    color:gold;
 }
 
 .card{
@@ -30,8 +30,7 @@ h1{
 input{
     width:100%;
     padding:12px;
-    margin-top:5px;
-    margin-bottom:15px;
+    margin:10px 0;
     border:none;
     border-radius:8px;
     background:#222;
@@ -39,40 +38,94 @@ input{
 }
 
 button{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:8px;
     background:gold;
     color:black;
-    border:none;
-    padding:12px;
-    width:100%;
-    border-radius:8px;
-    cursor:pointer;
     font-weight:bold;
+    cursor:pointer;
+}
+
+button:hover{
+    opacity:0.9;
+}
+
+#status{
+    text-align:center;
+    margin-top:15px;
+    color:silver;
 }
 </style>
 </head>
 
 <body>
 
-<h1>◇ Lunar Coastal DJ Portal</h1>
+<h1>◇ Lunar Coastal DJ Upload</h1>
 
 <div class="card">
 
-<label>Roblox Username</label>
-<input id="username">
+<input id="username" placeholder="Roblox Username">
+<input id="title" placeholder="Song Title">
+<input id="code" placeholder="Music Code">
 
-<label>Song Title</label>
-<input id="title">
-
-<label>Music Code</label>
-<input id="code">
-
-<button id="submitBtn">
-Submit For Approval
-</button>
+<button onclick="submitSong()">Submit For Approval</button>
 
 <p id="status"></p>
 
 </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCyBerxDREj6NUnoo5lFdIZRb2d8SV_ebw",
+  authDomain: "lunar-coastal-dj.firebaseapp.com",
+  projectId: "lunar-coastal-dj",
+  storageBucket: "lunar-coastal-dj.firebasestorage.app",
+  messagingSenderId: "5425058963",
+  appId: "1:5425058963:web:d99b9cd5b370b15fd2a966"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.submitSong = async function(){
+
+    const username = document.getElementById("username").value;
+    const title = document.getElementById("title").value;
+    const code = document.getElementById("code").value;
+    const status = document.getElementById("status");
+
+    if(!username || !title || !code){
+        status.innerText = "Please fill all fields.";
+        return;
+    }
+
+    try {
+        await addDoc(collection(db, "pendingSongs"), {
+            dj: username,
+            title: title,
+            code: code,
+            status: "pending",
+            createdAt: serverTimestamp()
+        });
+
+        status.innerText = "Submitted for approval ✅";
+
+        document.getElementById("username").value = "";
+        document.getElementById("title").value = "";
+        document.getElementById("code").value = "";
+
+    } catch (e) {
+        status.innerText = "Error submitting song ❌";
+        console.error(e);
+    }
+}
+</script>
 
 </body>
 </html>
