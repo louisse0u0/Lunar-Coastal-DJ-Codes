@@ -289,6 +289,11 @@ let currentDJ = sessionStorage.getItem("djName") || "";
 let songs = [];
 
 /* ACCESS */
+
+window.openAccess = () => {
+    document.getElementById("accessModal").style.display = "flex";
+};
+    
 window.loginAccess = () => {
 
     const code = document
@@ -438,6 +443,24 @@ function renderSongs(list = songs){
     `).join("");
 }
 
+function renderAdmin(list = songs){
+
+    if(role !== "admin") return;
+
+    document.getElementById("adminSongs").innerHTML =
+    list.map(s => `
+        <div class="card">
+            <h3>${s.title}</h3>
+            <p>DJ: ${s.dj}</p>
+            <p>ID: ${s.code}</p>
+
+            <button onclick="deleteSong('${s.id}')">
+                Delete
+            </button>
+        </div>
+    `).join("");
+}
+    
 /* DELETE */
 window.deleteSong = async (id)=>{
     await deleteDoc(doc(db,"songs",id));
