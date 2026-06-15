@@ -23,7 +23,6 @@ header{
 
 header h1{
     color:gold;
-    text-shadow:0 0 10px rgba(255,215,0,.3);
 }
 
 /* LOGIN BUTTON */
@@ -36,7 +35,6 @@ header h1{
     padding:8px 12px;
     border-radius:8px;
     cursor:pointer;
-    box-shadow:0 0 10px gold;
 }
 
 /* LOGIN MODAL */
@@ -47,6 +45,7 @@ header h1{
     background:rgba(0,0,0,0.85);
     justify-content:center;
     align-items:center;
+    z-index:9999;
 }
 
 #loginBox{
@@ -87,7 +86,6 @@ nav button{
 nav button.active{
     background:gold;
     color:black;
-    box-shadow:0 0 10px gold;
 }
 
 /* SEARCH */
@@ -117,23 +115,17 @@ section.active{
     display:block;
 }
 
-/* CARDS (SPOTIFY STYLE) */
+/* CARDS */
 .card{
-    background:linear-gradient(145deg,#111,#1a1a1a);
+    background:#141414;
     padding:15px;
     margin:10px auto;
-    border-radius:12px;
+    border-radius:10px;
     max-width:500px;
     border:1px solid rgba(255,215,0,.2);
-    box-shadow:0 0 12px rgba(255,215,0,.05);
-    transition:0.3s;
 }
 
-.card:hover{
-    transform:scale(1.02);
-    box-shadow:0 0 18px rgba(255,215,0,.2);
-}
-
+/* BUTTON */
 button{
     padding:10px;
     border:none;
@@ -160,7 +152,7 @@ button{
     <button id="loginBtn" onclick="openLogin()">Login</button>
 </header>
 
-<!-- LOGIN MODAL -->
+<!-- LOGIN -->
 <div id="loginModal">
     <div id="loginBox">
         <h3>Login Access</h3>
@@ -184,7 +176,7 @@ button{
 
 <!-- HOME -->
 <section id="home" class="active">
-    <h2 style="text-align:center;">🎧 DJ Library</h2>
+    <h2 style="text-align:center;">DJ Library</h2>
     <div id="songs"></div>
 </section>
 
@@ -230,9 +222,18 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ROLES */
-const djCodes = ["FRO-77421","GIO-99120","SOL-11293","MOO-88210","SOF-55102","ZEI-77190","CAM-44123","DAM-33210","LAN-88291","LEE-22190","MAX-99201","TOK-11923","TRE-55441","ZOD-77881"];
-const adminCodes = ["LOU-88421","NOX-19382","VIV-55210];
+/* FIXED CODES */
+const djCodes = [
+  "FRO-77421","GIO-99120","SOL-11293","MOO-88210","SOF-55102",
+  "ZEI-77190","CAM-44123","DAM-33210","LAN-88291","LEE-22190",
+  "MAX-99201","TOK-11923","TRE-55441","ZOD-77881"
+];
+
+const adminCodes = [
+  "LOU-88421",
+  "NOX-19382",
+  "VIV-55210"
+];
 
 let role = sessionStorage.getItem("role") || "guest";
 let songs = [];
@@ -248,24 +249,19 @@ window.login = function(){
 
     if(adminCodes.includes(code)){
         role = "admin";
-        sessionStorage.setItem("role", role);
-        unlockUI();
-        status.innerText = "Admin logged in";
-        return;
-    }
-
-    if(djCodes.includes(code)){
+    } else if(djCodes.includes(code)){
         role = "dj";
-        sessionStorage.setItem("role", role);
-        unlockUI();
-        status.innerText = "DJ logged in";
+    } else {
+        status.innerText = "Invalid code";
         return;
     }
 
-    status.innerText = "Invalid code";
+    sessionStorage.setItem("role", role);
+    unlockUI();
+    status.innerText = role.toUpperCase() + " logged in";
 };
 
-/* UI UNLOCK */
+/* UI */
 function unlockUI(){
     document.getElementById("loginModal").style.display = "none";
     document.getElementById("nav").style.display = "flex";
@@ -291,13 +287,10 @@ document.getElementById("searchInput").addEventListener("input", filterSongs);
 
 function filterSongs(){
     const q = document.getElementById("searchInput").value.toLowerCase();
-
-    const filtered = songs.filter(s =>
+    renderSongs(songs.filter(s =>
         s.title.toLowerCase().includes(q) ||
         s.dj.toLowerCase().includes(q)
-    );
-
-    renderSongs(filtered);
+    ));
 }
 
 /* COPY */
@@ -324,7 +317,7 @@ window.submitSong = async function(){
     document.getElementById("status").innerText = "Submitted!";
 };
 
-/* LOAD SONGS */
+/* LOAD */
 async function loadSongs(){
     const snap = await getDocs(collection(db,"songs"));
     songs = snap.docs.map(d => d.data());
@@ -344,7 +337,7 @@ function renderSongs(list){
     `).join("");
 }
 
-/* LOAD PENDING */
+/* ADMIN */
 async function loadPending(){
     const snap = await getDocs(collection(db,"pendingSongs"));
 
@@ -355,7 +348,9 @@ async function loadPending(){
         <div class="card">
             <h3>${p.title}</h3>
             <p>${p.dj}</p>
-            <button onclick="approve('${d.id}','${p.title}','${p.dj}','${p.code}')">Approve</button>
+            <button onclick="approve('${d.id}','${p.title}','${p.dj}','${p.code}')">
+                Approve
+            </button>
         </div>`;
     }).join("");
 }
