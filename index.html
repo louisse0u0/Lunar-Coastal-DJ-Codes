@@ -142,17 +142,26 @@ const songsContainer = document.getElementById("songs");
 const searchInput = document.getElementById("searchInput");
 const djFilter = document.getElementById("djFilter");
 
+// ✨ Render songs with animation + empty state
 function renderSongs(list){
     songsContainer.innerHTML = "";
 
     if(list.length === 0){
-        songsContainer.innerHTML = "<p style='text-align:center;color:gray'>No songs found</p>";
+        songsContainer.innerHTML = `
+            <p style="text-align:center;color:gray;animation:fadeIn 0.5s;">
+                No results found 😔
+            </p>`;
         return;
     }
 
-    list.forEach(song => {
+    list.forEach((song, index) => {
         const div = document.createElement("div");
         div.className = "card";
+
+        // fade-in animation delay
+        div.style.opacity = "0";
+        div.style.transform = "translateY(10px)";
+        div.style.animation = `fadeInUp 0.4s ease forwards ${index * 0.05}s`;
 
         div.innerHTML = `
             <h3>${song.title}</h3>
@@ -165,12 +174,13 @@ function renderSongs(list){
     });
 }
 
+// 📋 Copy function
 window.copyCode = function(code){
     navigator.clipboard.writeText(code);
     alert("Copied: " + code);
 }
 
-// 🔥 Load songs from Firebase
+// 🔥 Load Firestore songs
 async function loadSongs(){
     const snapshot = await getDocs(collection(db,"songs"));
 
@@ -184,7 +194,7 @@ async function loadSongs(){
     renderSongs(allSongs);
 }
 
-// 🎛️ Build DJ dropdown automatically
+// 🎛️ Auto DJ filter
 function populateDJFilter(){
     const djs = [...new Set(allSongs.map(s => s.dj))];
 
@@ -198,7 +208,7 @@ function populateDJFilter(){
     });
 }
 
-// 🔍 Filter system (SEARCH + DJ)
+// 🔍 Search + Filter logic
 function filterSongs(){
     let filtered = allSongs;
 
