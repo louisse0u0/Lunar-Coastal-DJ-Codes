@@ -238,14 +238,91 @@ select:focus{
     padding:7px;
 }
 
-.playlistSong{
+.playlistCard{
+    background:#121212;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:18px;
+    padding:18px;
+    margin-bottom:18px;
+    box-shadow:0 0 18px rgba(255,0,204,.08);
+}
+
+.playlistHeader{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    background:#1a1a1a;
-    border-radius:8px;
-    padding:8px;
+    gap:12px;
+    margin-bottom:12px;
+}
+
+.playlistTitle{
+    font-size:24px;
+    font-weight:700;
+    color:white;
+}
+
+.playlistTools{
+    display:flex;
+    gap:6px;
+}
+
+.playlistTools button{
+    width:auto;
+    margin:0;
+    padding:6px 12px;
+    font-size:11px;
+}
+
+.playlistSong{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    background:#191919;
+    border:1px solid rgba(255,255,255,.05);
+
+    border-radius:12px;
+
+    padding:10px 12px;
     margin-top:8px;
+}
+
+.songLeft{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.songInfo{
+    display:flex;
+    flex-direction:column;
+}
+
+.songTitle{
+    font-size:14px;
+    font-weight:600;
+}
+
+.songCode{
+    font-size:11px;
+    color:#888;
+}
+
+.songPitch{
+    font-size:11px;
+    color:#ff73df;
+}
+
+.songActions{
+    display:flex;
+    gap:6px;
+}
+
+.miniBtn{
+    width:auto !important;
+    margin:0;
+    padding:5px 10px;
+    font-size:11px;
 }
 
 .songActions{
@@ -975,16 +1052,39 @@ function renderPlaylists(){
     "playlistContainer"
     ).innerHTML = mine.map(p=>`
 
-        <div class="card">
+        <div class="playlistCard">
 
-            <h3>${p.name}</h3>
+<div class="playlistHeader">
 
-            <p>
-            Songs:
-            ${p.songs?.length || 0}
-            </p>
+    <div>
 
-            <div class="playlistActions">
+        <div class="playlistTitle">
+            ${p.name}
+        </div>
+
+        <small style="color:#888;">
+            ${p.songs?.length || 0} Songs
+        </small>
+
+    </div>
+
+    <div class="playlistTools">
+
+        <button onclick="toggleRename('${p.id}')">
+            Rename
+        </button>
+
+        <button onclick="toggleSongSearch('${p.id}')">
+            Add Song
+        </button>
+
+        <button onclick="deletePlaylist('${p.id}')">
+            Delete
+        </button>
+
+    </div>
+
+</div>
 
                 <button
                 onclick="toggleRename('${p.id}')">
@@ -1039,45 +1139,49 @@ function renderPlaylists(){
 
             ${(p.songs || []).map((song,index)=>`
 
-                <div class="playlistSong">
+<div class="playlistSong">
 
-                    <div>
+    <div class="songLeft">
 
-                        <b>${song.title}</b>
+        <div class="songActions">
 
-                        <br>
+            <button
+            class="glow miniBtn"
+            onclick="copyCode('${song.code}')">
+            Copy
+            </button>
 
-                        <small>
-                        ${song.code}
-                        </small>
+            <button
+            class="miniBtn"
+            onclick="
+            removeSongFromPlaylist(
+            '${p.id}',
+            ${index}
+            )">
+            ✕
+            </button>
 
-                    </div>
+        </div>
 
-                    <div class="songActions">
+        <div class="songInfo">
 
-                        <button
-                        class="glow miniBtn"
-                        onclick="copyCode('${song.code}')">
+            <div class="songTitle">
+                ${song.title}
+            </div>
 
-                        Copy
+            <div class="songCode">
+                ${song.code}
+            </div>
 
-                        </button>
+            <div class="songPitch">
+                Pitch: ${song.pitch}
+            </div>
 
-                        <button
-                        class="miniBtn"
-                        onclick="
-                        removeSongFromPlaylist(
-                        '${p.id}',
-                        ${index}
-                        )">
+        </div>
 
-                        ✕
+    </div>
 
-                        </button>
-
-                    </div>
-
-                </div>
+</div>
 
             `).join("")}
 
