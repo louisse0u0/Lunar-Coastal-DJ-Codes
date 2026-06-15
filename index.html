@@ -428,7 +428,9 @@ window.loginAccess = () => {
 
 function unlockUI(){
     document.getElementById("accessModal").style.display = "none";
+
     document.getElementById("uploadTab").style.display = "inline-block";
+    document.getElementById("privateTab").style.display = (role === "dj" || role === "admin") ? "inline-block" : "none";
     document.getElementById("adminTab").style.display = role === "admin" ? "inline-block" : "none";
 }
 
@@ -438,9 +440,13 @@ window.showTab = (tab)=>{
     document.getElementById(tab).classList.add("active");
 
     document.getElementById("searchBar").style.display =
-        (tab === "home" || tab === "admin") ? "block" : "none";
-};
+        (tab === "home") ? "flex" : "none";
 
+    if(tab === "private") renderPrivate(songs);
+    if(tab === "admin") renderAdmin(songs);
+    if(tab === "home") renderSongs(songs);
+};
+    
 /* SEARCH */
 function applyFilters(){
 
@@ -541,22 +547,21 @@ async function loadSongs(){
 
     const snap = await getDocs(collection(db,"songs"));
 
-songs = snap.docs.map(d => ({
-    id: d.id,
-    ...d.data()
-}));
+    songs = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+    }));
 
-songs.sort((a, b) =>
-    (a.title || "").localeCompare(b.title || "")
-);
-    
-populateFilters();
-renderSongs(songs);
-renderAdmin(songs);
-renderPrivate(songs);
-    
+    songs.sort((a, b) =>
+        (a.title || "").localeCompare(b.title || "")
+    );
+
+     populateFilters();
+    renderSongs(songs);
+    renderAdmin(songs);
+    renderPrivate(songs);
 }
-
+    
 function populateFilters(){
 
     const djFilter =
@@ -628,6 +633,41 @@ function renderPrivate(list = songs){
             <p>ID: ${s.code}</p>
         </div>
     `).join("");
+}
+
+function renderAdmin(list = songs){
+
+    if(role !== "admin") return;
+
+    const privateSongs = list.filter(s => s.visibility === "private");
+
+    document.getElementById("adminSongs").innerHTML = `
+        <h3>🔒 Private Uploads</h3>
+        ${privateSongs.map(s => `
+            <div class="card">
+                <h3>${s.title}</h3>
+                <p>Pitch: ${s.pitch}</p>
+                <p>DJ: ${s.dj}</p>
+                <p>ID: ${s.code}</p>
+
+                <button onclick="deleteSong('${s.id}')">Delete</button>
+            </div>
+        `).join("")}
+
+        <hr style="margin:15px 0; border:1px solid #333">
+
+        <h3>🌍 Public Uploads</h3>
+        ${list.filter(s => s.visibility !== "private").map(s => `
+            <div class="card">
+                <h3>${s.title}</h3>
+                <p>Pitch: ${s.pitch}</p>
+                <p>DJ: ${s.dj}</p>
+                <p>ID: ${s.code}</p>
+
+                <button onclick="deleteSong('${s.id}')">Delete</button>
+            </div>
+        `).join("")}
+    `;
 }
     
 /* DELETE */
