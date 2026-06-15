@@ -247,7 +247,7 @@ select:focus{
 
 <!-- NAV -->
 <nav>
-    <button onclick="showTab('home')" class="active">Public Codes</button>
+    <button onclick="showTab('home')">Public Codes</button>
     <button onclick="showTab('private')" id="privateTab" style="display:none;">Private Codes</button>
     <button id="uploadTab" onclick="showTab('upload')" style="display:none;">Upload</button>
     <button id="adminTab" onclick="showTab('admin')" style="display:none;">Admin</button>
@@ -470,28 +470,37 @@ function unlockUI(){
 /* TAB */
 window.showTab = (tab)=>{
 
-    document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
+    // switch section
+    document.querySelectorAll("section")
+        .forEach(s => s.classList.remove("active"));
+
     document.getElementById(tab).classList.add("active");
 
-    // REMOVE ACTIVE FROM ALL NAV BUTTONS
-    document.querySelectorAll("nav button").forEach(b=>{
-        b.classList.remove("active");
-    });
+    // remove active from all nav buttons
+    document.querySelectorAll("nav button")
+        .forEach(b => b.classList.remove("active"));
 
-    // ADD ACTIVE TO CLICKED BUTTON
-    const activeBtn = document.querySelector(`nav button[onclick="showTab('${tab}')"]`);
-    if(activeBtn) activeBtn.classList.add("active");
+    // find correct button and activate it
+    const btn = Array.from(document.querySelectorAll("nav button"))
+        .find(b => b.getAttribute("onclick") === `showTab('${tab}')`);
 
+    if(btn) btn.classList.add("active");
+
+    // search visibility
     const showSearch =
         (tab === "home" || tab === "private" || tab === "admin");
 
     document.getElementById("searchBar").style.display =
         showSearch ? "flex" : "none";
 
+    // render
     if(tab === "home") renderSongs(songs);
     if(tab === "private") renderPrivate(songs);
     if(tab === "admin") renderAdmin(songs);
     if(tab === "manage") renderManage(songs);
+
+    // SAVE LAST TAB (NEW)
+    sessionStorage.setItem("lastTab", tab);
 };
     
 /* SEARCH */
@@ -748,21 +757,31 @@ function renderManage(list = songs){
     
 /* DELETE */
 window.deleteSong = async (id)=>{
-    await deleteDoc(doc(db,"songs",id));
-
-    // instantly remove from local array
+    // 1. remove instantly from local array
     songs = songs.filter(s => s.id !== id);
 
-    // re-render instantly (no Firestore reload)
+    // 2. instantly re-render UI
     renderSongs(songs);
     renderPrivate(songs);
     renderAdmin(songs);
     renderManage(songs);
+
+    // 3. delete from firestore in background
+    await deleteDoc(doc(db,"songs",id));
 };
 
 /* INIT */
 loadSongs();
-window.onload = ()=>{ if(role!=="guest") unlockUI(); };
+window.onload = () => {
+
+    // restore UI if logged in
+    if (role !== "guest") unlockUI();
+
+    // restore last tab (default = home)
+    const savedTab = sessionStorage.getItem("lastTab") || "home";
+
+    showTab(savedTab);
+};
 
 </script>
 
