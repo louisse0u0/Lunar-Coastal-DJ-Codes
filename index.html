@@ -250,11 +250,15 @@ select:focus{
 }
 
 #playlistContainer{
-    display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(550px,1fr));
-    gap:20px;
+    columns: 2 550px;
+    column-gap: 20px;
+}
 
-    grid-auto-flow:dense;
+.playlistCard{
+    display:inline-block;
+    width:100%;
+    margin:0 0 20px;
+    break-inside:avoid;
 }
 
 /* Tablet */
