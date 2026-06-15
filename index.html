@@ -243,8 +243,23 @@ select:focus{
     border:1px solid rgba(255,255,255,.08);
     border-radius:18px;
     padding:18px;
-    margin-bottom:18px;
     box-shadow:0 0 18px rgba(255,0,204,.08);
+
+    height:fit-content;
+    margin-bottom:0; /* remove old spacing */
+}
+
+#playlistContainer{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(550px, 1fr));
+    gap:20px;
+}
+
+/* Tablet */
+@media(max-width:1000px){
+    #playlistContainer{
+        grid-template-columns:1fr;
+    }
 }
 
 .playlistHeader{
