@@ -93,6 +93,28 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// ✅ DJ mapping (CORRECT PLACE)
+const djNames = {
+  "louisse0u0": "DJ Lou",
+  "v1rg0gh": "DJ Nox",
+  "4vieve": "DJ Viv",
+
+  "Froschh07": "DJ Frosch",
+  "chislon": "DJ Gio",
+  "ELSUTRAN30": "DJ Soll",
+  "dumpnimoozy": "DJ Moozy",
+  "Se0_pii": "DJ Sofi",
+  "neirvu": "DJ Zei",
+  "charlenelu15": "DJ Cams",
+  "cambiarepax": "DJ Damon",
+  "crazyy7yo": "DJ Lans",
+  "FatherDuckly": "DJ Lee",
+  "LouXieEr": "DJ Maxinah",
+  "bigmouseph": "DJ Tokyo",
+  "SunggSuho": "DJ Trell",
+  "zodipogi": "DJ Zodi"
+};
+
 window.submitSong = async function(){
 
     const username = document.getElementById("username").value;
@@ -105,9 +127,11 @@ window.submitSong = async function(){
         return;
     }
 
+    const displayDJ = djNames[username] || username;
+
     try {
         await addDoc(collection(db, "pendingSongs"), {
-            dj: username,
+            dj: displayDJ,
             title: title,
             code: code,
             status: "pending",
