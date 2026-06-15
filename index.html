@@ -338,10 +338,6 @@ select:focus{
     <div id="manageSearchBar" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">
         <input id="manageSearchInput" placeholder="Search your uploads...">
 
-        <select id="manageDjFilter">
-            <option value="">All (You Only)</option>
-        </select>
-
         <select id="managePitchFilter">
             <option value="">All Pitches</option>
         </select>
@@ -473,8 +469,18 @@ function unlockUI(){
 
 /* TAB */
 window.showTab = (tab)=>{
+
     document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
     document.getElementById(tab).classList.add("active");
+
+    // REMOVE ACTIVE FROM ALL NAV BUTTONS
+    document.querySelectorAll("nav button").forEach(b=>{
+        b.classList.remove("active");
+    });
+
+    // ADD ACTIVE TO CLICKED BUTTON
+    const activeBtn = document.querySelector(`nav button[onclick="showTab('${tab}')"]`);
+    if(activeBtn) activeBtn.classList.add("active");
 
     const showSearch =
         (tab === "home" || tab === "private" || tab === "admin");
@@ -743,7 +749,15 @@ function renderManage(list = songs){
 /* DELETE */
 window.deleteSong = async (id)=>{
     await deleteDoc(doc(db,"songs",id));
-    loadSongs();
+
+    // instantly remove from local array
+    songs = songs.filter(s => s.id !== id);
+
+    // re-render instantly (no Firestore reload)
+    renderSongs(songs);
+    renderPrivate(songs);
+    renderAdmin(songs);
+    renderManage(songs);
 };
 
 /* INIT */
