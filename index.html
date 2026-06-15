@@ -252,6 +252,10 @@ select:focus{
     <button id="uploadTab" onclick="showTab('upload')" style="display:none;">Upload</button>
     <button id="adminTab" onclick="showTab('admin')" style="display:none;">Admin</button>
 </nav>
+
+<button id="manageTab" onclick="showTab('manage')" style="display:none;">
+    Manage Uploads
+</button>
     
 <!-- SEARCH -->
 <div id="searchBar">
@@ -326,6 +330,35 @@ select:focus{
     <div class="container" id="adminSongs"></div>
 </section>
 
+<!-- MANAGE -->
+<section id="manage">
+    <h2>Manage My Uploads</h2>
+
+    <!-- LOCAL SEARCH BAR (same controls reused) -->
+    <div id="manageSearchBar" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">
+        <input id="manageSearchInput" placeholder="Search your uploads...">
+
+        <select id="manageDjFilter">
+            <option value="">All (You Only)</option>
+        </select>
+
+        <select id="managePitchFilter">
+            <option value="">All Pitches</option>
+        </select>
+    </div>
+
+    <!-- PUBLIC / PRIVATE FILTER -->
+    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:15px;">
+        <button onclick="setManageVisibility('public')">Public</button>
+        <button onclick="setManageVisibility('private')">Private</button>
+        <button onclick="setManageVisibility('all')">All</button>
+    </div>
+
+    <div class="container" id="manageSongs"></div>
+</section>
+
+<!-- MODULE -->
+    
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -383,6 +416,7 @@ const adminCodes = [
 let role = sessionStorage.getItem("role") || "guest";
 let currentDJ = sessionStorage.getItem("djName") || "";
 let songs = [];
+let manageVisibility = "all";
 
 /* ACCESS */
 
@@ -432,6 +466,9 @@ function unlockUI(){
     document.getElementById("uploadTab").style.display = "inline-block";
     document.getElementById("privateTab").style.display = (role === "dj" || role === "admin") ? "inline-block" : "none";
     document.getElementById("adminTab").style.display = role === "admin" ? "inline-block" : "none";
+    
+    document.getElementById("manageTab").style.display =
+    (role === "dj" || role === "admin") ? "inline-block" : "none";
 }
 
 /* TAB */
@@ -439,7 +476,6 @@ window.showTab = (tab)=>{
     document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
     document.getElementById(tab).classList.add("active");
 
-    // SHOW SEARCH IN MULTIPLE TABS
     const showSearch =
         (tab === "home" || tab === "private" || tab === "admin");
 
@@ -449,6 +485,7 @@ window.showTab = (tab)=>{
     if(tab === "home") renderSongs(songs);
     if(tab === "private") renderPrivate(songs);
     if(tab === "admin") renderAdmin(songs);
+    if(tab === "manage") renderManage(songs);
 };
     
 /* SEARCH */
@@ -490,10 +527,30 @@ document.getElementById("djFilter")
 
 document.getElementById("pitchFilter")
 .addEventListener("change", applyFilters);
+
+document.getElementById("manageSearchInput")?.addEventListener("input", ()=>{
+    const search = document.getElementById("manageSearchInput").value.toLowerCase();
+
+    const filtered = songs.filter(s=>{
+        if(role !== "admin" && s.dj !== currentDJ) return false;
+
+        return (
+            s.title.toLowerCase().includes(search) ||
+            s.code.toLowerCase().includes(search)
+        );
+    });
+
+    renderManage(filtered);
+});
     
 /* COPY */
 window.copyCode = (code)=>{
     navigator.clipboard.writeText(code);
+};
+
+window.setManageVisibility = (type)=>{
+    manageVisibility = type;
+    renderManage(songs);
 };
 
 /* SUBMIT */
@@ -641,7 +698,7 @@ function renderAdmin(list = songs){
     const publicSongs = list.filter(s => s.visibility !== "private");
 
     document.getElementById("adminSongs").innerHTML = `
-        <h3>All Songs (Delete Only)</h3>
+        <h3>All Songs (To Delete Only)</h3>
 
         ${list.map(s => `
             <div class="card">
@@ -654,6 +711,33 @@ function renderAdmin(list = songs){
             </div>
         `).join("")}
     `;
+}
+
+function renderManage(list = songs){
+
+    if(role !== "dj" && role !== "admin") return;
+
+    let mySongs = list.filter(s =>
+        role === "admin" ? true : s.dj === currentDJ
+    );
+
+    if(manageVisibility !== "all"){
+        mySongs = mySongs.filter(s => s.visibility === manageVisibility);
+    }
+
+    document.getElementById("manageSongs").innerHTML =
+        mySongs.map(s => `
+            <div class="card">
+                <h3>${s.title}</h3>
+                <p>Pitch: ${s.pitch}</p>
+                <p>DJ: ${s.dj}</p>
+                <p>Type: ${s.visibility}</p>
+                <p>ID: ${s.code}</p>
+
+                <button class="glow" onclick="copyCode('${s.code}')">Copy</button>
+                <button onclick="deleteSong('${s.id}')">Delete</button>
+            </div>
+        `).join("");
 }
     
 /* DELETE */
