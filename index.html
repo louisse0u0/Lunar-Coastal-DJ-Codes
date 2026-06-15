@@ -297,12 +297,12 @@ window.showTab = (tab)=>{
         (tab === "home" || tab === "admin") ? "block" : "none";
 };
 
-/* SEARCH */
+/* SEARCH (FIXED) */
 document.getElementById("searchInput").addEventListener("input",()=>{
     const q = document.getElementById("searchInput").value.toLowerCase();
 
     if(!q){
-        renderSongs(); // reset full list when empty
+        renderSongs(songs);
         return;
     }
 
@@ -314,13 +314,13 @@ document.getElementById("searchInput").addEventListener("input",()=>{
 
     renderSongs(filtered);
 });
-    
+
 /* COPY */
 window.copyCode = (code)=>{
     navigator.clipboard.writeText(code);
 };
 
-/* SUBMIT WITH DUPLICATE CHECK */
+/* SUBMIT */
 window.submitSong = async ()=>{
 
     const title = document.getElementById("title").value.trim();
@@ -359,13 +359,13 @@ async function loadSongs(){
     const snap = await getDocs(collection(db,"songs"));
     songs = snap.docs.map(d=>({id:d.id, ...d.data()}));
 
-    renderSongs();
+    renderSongs(songs);
 }
 
-/* RENDER HOME + ADMIN */
-function renderSongs(){
+/* RENDER (FIXED) */
+function renderSongs(list = songs){
 
-    const html = songs.map(s=>`
+    const html = list.map(s=>`
         <div class="card">
             <h3>${s.title}</h3>
             <p>DJ: ${s.dj}</p>
@@ -388,7 +388,7 @@ function renderSongs(){
     }
 }
 
-/* DELETE ADMIN */
+/* DELETE */
 window.deleteSong = async (id)=>{
     await deleteDoc(doc(db,"songs",id));
     loadSongs();
