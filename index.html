@@ -634,33 +634,42 @@ function renderAdmin(list = songs){
     if(role !== "admin") return;
 
     const privateSongs = list.filter(s => s.visibility === "private");
+    const publicSongs = list.filter(s => s.visibility !== "private");
 
     document.getElementById("adminSongs").innerHTML = `
         <h3>🔒 Private Uploads</h3>
-        ${privateSongs.map(s => `
-            <div class="card">
-                <h3>${s.title}</h3>
-                <p>Pitch: ${s.pitch}</p>
-                <p>DJ: ${s.dj}</p>
-                <p>ID: ${s.code}</p>
+        ${
+            privateSongs.length
+            ? privateSongs.map(s => `
+                <div class="card">
+                    <h3>${s.title}</h3>
+                    <p>Pitch: ${s.pitch}</p>
+                    <p>DJ: ${s.dj}</p>
+                    <p>ID: ${s.code}</p>
 
-                <button onclick="deleteSong('${s.id}')">Delete</button>
-            </div>
-        `).join("")}
+                    <button onclick="deleteSong('${s.id}')">Delete</button>
+                </div>
+            `).join("")
+            : `<p style="opacity:0.5">No private uploads</p>`
+        }
 
         <hr style="margin:15px 0; border:1px solid #333">
 
         <h3>🌍 Public Uploads</h3>
-        ${list.filter(s => s.visibility !== "private").map(s => `
-            <div class="card">
-                <h3>${s.title}</h3>
-                <p>Pitch: ${s.pitch}</p>
-                <p>DJ: ${s.dj}</p>
-                <p>ID: ${s.code}</p>
+        ${
+            publicSongs.length
+            ? publicSongs.map(s => `
+                <div class="card">
+                    <h3>${s.title}</h3>
+                    <p>Pitch: ${s.pitch}</p>
+                    <p>DJ: ${s.dj}</p>
+                    <p>ID: ${s.code}</p>
 
-                <button onclick="deleteSong('${s.id}')">Delete</button>
-            </div>
-        `).join("")}
+                    <button onclick="deleteSong('${s.id}')">Delete</button>
+                </div>
+            `).join("")
+            : `<p style="opacity:0.5">No public uploads</p>`
+        }
     `;
 }
     
