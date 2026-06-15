@@ -439,8 +439,8 @@ window.showTab = (tab)=>{
     document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
     document.getElementById(tab).classList.add("active");
 
-    // KEEP SEARCH ALWAYS VISIBLE (IMPORTANT FIX)
-    document.getElementById("searchBar").style.display = "flex";
+    document.getElementById("searchBar").style.display =
+        (tab === "home") ? "flex" : "none";
 
     if(tab === "home") renderSongs(songs);
     if(tab === "private") renderPrivate(songs);
@@ -637,39 +637,18 @@ function renderAdmin(list = songs){
     const publicSongs = list.filter(s => s.visibility !== "private");
 
     document.getElementById("adminSongs").innerHTML = `
-        <h3>🔒 Private Uploads</h3>
-        ${
-            privateSongs.length
-            ? privateSongs.map(s => `
-                <div class="card">
-                    <h3>${s.title}</h3>
-                    <p>Pitch: ${s.pitch}</p>
-                    <p>DJ: ${s.dj}</p>
-                    <p>ID: ${s.code}</p>
+        <h3>All Songs (Delete Only)</h3>
 
-                    <button onclick="deleteSong('${s.id}')">Delete</button>
-                </div>
-            `).join("")
-            : `<p style="opacity:0.5">No private uploads</p>`
-        }
+        ${list.map(s => `
+            <div class="card">
+                <h3>${s.title}</h3>
+                <p>Pitch: ${s.pitch}</p>
+                <p>DJ: ${s.dj}</p>
+                <p>ID: ${s.code}</p>
 
-        <hr style="margin:15px 0; border:1px solid #333">
-
-        <h3>🌍 Public Uploads</h3>
-        ${
-            publicSongs.length
-            ? publicSongs.map(s => `
-                <div class="card">
-                    <h3>${s.title}</h3>
-                    <p>Pitch: ${s.pitch}</p>
-                    <p>DJ: ${s.dj}</p>
-                    <p>ID: ${s.code}</p>
-
-                    <button onclick="deleteSong('${s.id}')">Delete</button>
-                </div>
-            `).join("")
-            : `<p style="opacity:0.5">No public uploads</p>`
-        }
+                <button onclick="deleteSong('${s.id}')">Delete</button>
+            </div>
+        `).join("")}
     `;
 }
     
