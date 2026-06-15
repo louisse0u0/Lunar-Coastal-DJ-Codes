@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lunar Coastal Admin Panel</title>
+
+<style>
+body{
+    background:#0b0b0b;
+    color:white;
+    font-family:Arial;
+    max-width:900px;
+    margin:auto;
+    padding:30px;
+}
+
+h1{
+    text-align:center;
+    color:gold;
+}
+
+.card{
+    background:#141414;
+    padding:15px;
+    margin:10px 0;
+    border-radius:10px;
+    border:1px solid rgba(255,215,0,.2);
+}
+
+button{
+    padding:10px;
+    margin:5px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.approve{
+    background:gold;
+    color:black;
+}
+
+.reject{
+    background:#444;
+    color:white;
+}
+</style>
+</head>
+
+<body>
+
+<h1>◇ Lunar Coastal Admin Panel</h1>
+
+<div id="list"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, deleteDoc, doc, addDoc } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCyBerxDREj6NUnoo5lFdIZRb2d8SV_ebw",
+  authDomain: "lunar-coastal-dj.firebaseapp.com",
+  projectId: "lunar-coastal-dj",
+  storageBucket: "lunar-coastal-dj.firebasestorage.app",
+  messagingSenderId: "5425058963",
+  appId: "1:5425058963:web:d99b9cd5b370b15fd2a966"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const admins = ["louisse0u0","v1rg0gh","4vieve"];
+
+let currentUser = prompt("Enter your Roblox username:");
+
+if(!admins.includes(currentUser)){
+    document.body.innerHTML = "<h1>Access Denied ❌</h1>";
+}
+
+async function loadPending(){
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+
+    const snapshot = await getDocs(collection(db,"pendingSongs"));
+
+    snapshot.forEach((d)=>{
+
+        const data = d.data();
+
+        const div = document.createElement("div");
+        div.className = "card";
+
+        div.innerHTML = `
+            <h3>${data.title}</h3>
+            <p>DJ: ${data.dj}</p>
+            <p>Code: ${data.code}</p>
+
+            <button class="approve">Approve</button>
+            <button class="reject">Reject</button>
+        `;
+
+        div.querySelector(".approve").onclick = async ()=>{
+            await addDoc(collection(db,"songs"),{
+                title:data.title,
+                dj:data.dj,
+                code:data.code,
+                approved:true
+            });
+
+            await deleteDoc(doc(db,"pendingSongs",d.id));
+            loadPending();
+        };
+
+        div.querySelector(".reject").onclick = async ()=>{
+            await deleteDoc(doc(db,"pendingSongs",d.id));
+            loadPending();
+        };
+
+        list.appendChild(div);
+    });
+}
+
+loadPending();
+
+</script>
+
+</body>
+</html>
