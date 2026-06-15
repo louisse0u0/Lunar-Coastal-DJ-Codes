@@ -103,6 +103,24 @@ nav button.active{
     color:white;
 }
 
+#searchBar{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    align-items:center;
+    flex-wrap:wrap;
+}
+
+#djFilter,
+#pitchFilter{
+    width:180px;
+    padding:10px;
+    background:#1a1a1a;
+    color:white;
+    border:none;
+    border-radius:10px;
+}
+    
 /* SECTIONS */
 section{
     display:none;
@@ -207,7 +225,17 @@ input{
 
 <!-- SEARCH -->
 <div id="searchBar">
+
     <input id="searchInput" placeholder="Search songs or DJs...">
+
+    <select id="djFilter">
+        <option value="">All DJs</option>
+    </select>
+
+    <select id="pitchFilter">
+        <option value="">All Pitches</option>
+    </select>
+
 </div>
 
 <!-- HOME -->
@@ -220,6 +248,31 @@ input{
     <h2>Upload Song</h2>
     <input id="title" placeholder="Song Title">
     <input id="code" placeholder="Music Code">
+
+    <select id="pitch">
+    <option value="">Select Pitch</option>
+    <option value="5">5</option>
+    <option value="10">10</option>
+    <option value="15">15</option>
+    <option value="20">20</option>
+    <option value="25">25</option>
+    <option value="30">30</option>
+    <option value="35">35</option>
+    <option value="40">40</option>
+    <option value="45">45</option>
+    <option value="50">50</option>
+    <option value="55">55</option>
+    <option value="60">60</option>
+    <option value="65">65</option>
+    <option value="70">70</option>
+    <option value="75">75</option>
+    <option value="80">80</option>
+    <option value="85">85</option>
+    <option value="90">90</option>
+    <option value="95">95</option>
+    <option value="100">100</option>
+</select>
+    
     <button onclick="submitSong()" class="glow">Submit</button>
     <p id="status"></p>
 </section>
@@ -346,28 +399,55 @@ window.showTab = (tab)=>{
 };
 
 /* SEARCH */
-document.getElementById("searchInput").addEventListener("input", () => {
+function applyFilters(){
 
-    const q = document.getElementById("searchInput").value
-        .trim()
+    const search =
+        document.getElementById("searchInput")
+        .value
         .toLowerCase();
 
-    if(q === ""){
-        renderSongs(songs);
-        renderAdmin(songs);
-        return;
-    }
+    const dj =
+        document.getElementById("djFilter")
+        .value;
 
-    const filtered = songs.filter(s =>
-        (s.title || "").toLowerCase().includes(q) ||
-        (s.dj || "").toLowerCase().includes(q) ||
-        (s.code || "").toLowerCase().includes(q)
-    );
+    const pitch =
+        document.getElementById("pitchFilter")
+        .value;
+
+    const filtered = songs.filter(s => {
+
+        const matchSearch =
+            !search ||
+            s.title.toLowerCase().includes(search) ||
+            s.dj.toLowerCase().includes(search) ||
+            s.code.toLowerCase().includes(search);
+
+        const matchDJ =
+            !dj || s.dj === dj;
+
+        const matchPitch =
+            !pitch || s.pitch === pitch;
+
+        return (
+            matchSearch &&
+            matchDJ &&
+            matchPitch
+        );
+    });
 
     renderSongs(filtered);
     renderAdmin(filtered);
-});
+}
 
+document.getElementById("searchInput")
+.addEventListener("input", applyFilters);
+
+document.getElementById("djFilter")
+.addEventListener("change", applyFilters);
+
+document.getElementById("pitchFilter")
+.addEventListener("change", applyFilters);
+    
 /* COPY */
 window.copyCode = (code)=>{
     navigator.clipboard.writeText(code);
@@ -378,9 +458,10 @@ window.submitSong = async ()=>{
 
     const title = document.getElementById("title").value.trim();
     const code = document.getElementById("code").value.trim();
+    const pitch = document.getElementById("pitch").value;
     const status = document.getElementById("status");
 
-    if(!title || !code){
+    if(!title || !code || !pitch){
         status.innerText = "Cannot submit blank fields";
         return;
     }
@@ -394,15 +475,17 @@ window.submitSong = async ()=>{
     }
 
     await addDoc(collection(db,"songs"),{
-        dj: currentDJ,
-        title,
-        code,
-        createdAt:serverTimestamp()
-    });
+    dj: currentDJ,
+    title,
+    code,
+    pitch,
+    createdAt:serverTimestamp()
+});
 
     status.innerText = "Submitted!";
     document.getElementById("title").value = "";
     document.getElementById("code").value = "";
+    document.getElementById("pitch").value = "";
 
     loadSongs();
 };
@@ -420,11 +503,45 @@ songs = snap.docs.map(d => ({
 songs.sort((a, b) =>
     (a.title || "").localeCompare(b.title || "")
 );
-
+    
+populateFilters();
     renderSongs(songs);
     renderAdmin(songs);
 }
 
+function populateFilters(){
+
+    const djFilter =
+        document.getElementById("djFilter");
+
+    const pitchFilter =
+        document.getElementById("pitchFilter");
+
+    const djs =
+        [...new Set(songs.map(s => s.dj))]
+        .sort();
+
+    const pitches =
+        [...new Set(songs.map(s => s.pitch))]
+        .sort((a,b)=>a-b);
+
+    djFilter.innerHTML =
+        '<option value="">All DJs</option>';
+
+    pitchFilter.innerHTML =
+        '<option value="">All Pitches</option>';
+
+    djs.forEach(dj=>{
+        djFilter.innerHTML +=
+            `<option value="${dj}">${dj}</option>`;
+    });
+
+    pitches.forEach(pitch=>{
+        pitchFilter.innerHTML +=
+            `<option value="${pitch}">${pitch}</option>`;
+    });
+}
+    
 /* RENDER (FIXED) */
 function renderSongs(list = songs){
 
@@ -432,6 +549,7 @@ function renderSongs(list = songs){
     list.map(s => `
         <div class="card">
             <h3>${s.title}</h3>
+            <p>Pitch: ${s.pitch}</p>
             <p>DJ: ${s.dj}</p>
             <p>ID: ${s.code}</p>
 
@@ -451,6 +569,7 @@ function renderAdmin(list = songs){
     list.map(s => `
         <div class="card">
             <h3>${s.title}</h3>
+            <p>Pitch: ${s.pitch}</p>
             <p>DJ: ${s.dj}</p>
             <p>ID: ${s.code}</p>
 
