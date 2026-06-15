@@ -22,11 +22,33 @@ header{
 
 header h1{
     color:gold;
+    text-shadow:0 0 10px rgba(255,215,0,.3);
+}
+
+/* LOGIN SCREEN */
+#loginBox{
+    max-width:400px;
+    margin:80px auto;
+    padding:20px;
+    background:#141414;
+    border-radius:12px;
+    border:1px solid rgba(255,215,0,.3);
+    text-align:center;
+}
+
+#loginBox input{
+    width:100%;
+    padding:10px;
+    margin:10px 0;
+    border:none;
+    border-radius:6px;
+    background:#222;
+    color:white;
 }
 
 /* NAV */
 nav{
-    display:flex;
+    display:none;
     justify-content:center;
     gap:10px;
     padding:10px;
@@ -44,6 +66,7 @@ nav button{
 nav button.active{
     background:gold;
     color:black;
+    box-shadow:0 0 10px gold;
 }
 
 /* SECTIONS */
@@ -64,9 +87,10 @@ section.active{
     border-radius:10px;
     max-width:500px;
     border:1px solid rgba(255,215,0,.2);
+    box-shadow:0 0 10px rgba(255,215,0,.05);
 }
 
-input, select{
+input{
     width:100%;
     padding:10px;
     margin:8px 0;
@@ -92,6 +116,13 @@ button{
     padding:5px 10px;
     margin-top:5px;
 }
+
+/* COPY BUTTON */
+.copy-btn{
+    background:#333;
+    color:white;
+    margin-top:5px;
+}
 </style>
 </head>
 
@@ -101,24 +132,37 @@ button{
     <h1>◆ LUNAR COASTAL DJ HUB</h1>
 </header>
 
-<nav>
+<!-- LOGIN -->
+<div id="loginBox">
+    <h3>Login Access</h3>
+    <input id="accessCode" placeholder="Enter DJ or Admin Code">
+    <button onclick="login()">Enter</button>
+    <p id="loginStatus"></p>
+</div>
+
+<!-- NAV (HIDDEN UNTIL LOGIN) -->
+<nav id="nav">
     <button onclick="showTab('home')" class="active">Home</button>
-    <button onclick="showTab('upload')">Upload</button>
-    <button onclick="showTab('admin')">Admin</button>
+    <button id="uploadTab" onclick="showTab('upload')" style="display:none;">Upload</button>
+    <button id="adminTab" onclick="showTab('admin')" style="display:none;">Admin</button>
 </nav>
 
 <!-- HOME -->
 <section id="home" class="active">
-    <h2>Live Songs</h2>
-    <div id="songs"></div>
+    <h2>DJ Codes</h2>
+
+    <div class="card">
+        LOU-88421 <button class="copy-btn" onclick="copy('LOU-88421')">Copy</button>
+    </div>
+    <div class="card">
+        NOX-19382 <button class="copy-btn" onclick="copy('NOX-19382')">Copy</button>
+    </div>
 </section>
 
 <!-- UPLOAD -->
 <section id="upload">
     <h2>DJ Upload</h2>
-
     <div class="card">
-        <input id="djcode" placeholder="DJ Code">
         <input id="title" placeholder="Song Title">
         <input id="code" placeholder="Music Code">
         <button onclick="submitSong()">Submit</button>
@@ -135,14 +179,14 @@ button{
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { 
-getFirestore, 
-collection, 
-addDoc, 
-getDocs, 
-updateDoc, 
-doc, 
-serverTimestamp 
+import {
+getFirestore,
+collection,
+addDoc,
+getDocs,
+updateDoc,
+doc,
+serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -157,155 +201,115 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* =========================
-   DJ CODES
-========================= */
-const djCodes = {
-  "LOU-88421":"Lou",
-  "NOX-19382":"Nox",
-  "VIV-55210":"Viv",
-  "FRO-77421":"Frosch",
-  "GIO-99120":"Gio",
-  "SOL-11293":"Soll",
-  "MOO-88210":"Moozy",
-  "SOF-55102":"Sofi",
-  "ZEI-77190":"Zei",
-  "CAM-44123":"Cams",
-  "DAM-33210":"Damon",
-  "LAN-88291":"Lans",
-  "LEE-22190":"Lee",
-  "MAX-99201":"Maxinah",
-  "TOK-11923":"Tokyo",
-  "TRE-55441":"Trell",
-  "ZOD-77881":"Zodi"
+/* ROLES */
+const djCodes = ["FRO-77421","GIO-99120","SOL-11293","MOO-88210","SOF-55102","ZEI-77190","CAM-44123","DAM-33210","LAN-88291","LEE-22190","MAX-99201","TOK-11923","TRE-55441","ZOD-77881"];
+const adminCodes = ["LOU-88421","NOX-19382","VIV-55210"];
+
+let role = "guest";
+
+/* LOGIN */
+window.login = function(){
+    const code = document.getElementById("accessCode").value.trim().toUpperCase();
+    const status = document.getElementById("loginStatus");
+
+    if(adminCodes.includes(code)){
+        role = "admin";
+        unlockUI();
+        status.innerText = "Admin access granted";
+        return;
+    }
+
+    if(djCodes.includes(code)){
+        role = "dj";
+        unlockUI();
+        status.innerText = "DJ access granted";
+        return;
+    }
+
+    status.innerText = "Invalid code";
 };
 
-let songs = [];
+/* UNLOCK UI */
+function unlockUI(){
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("nav").style.display = "flex";
 
-/* =========================
-   TAB SYSTEM (FIXED)
-========================= */
+    if(role === "dj" || role === "admin"){
+        document.getElementById("uploadTab").style.display = "inline-block";
+    }
+
+    if(role === "admin"){
+        document.getElementById("adminTab").style.display = "inline-block";
+    }
+}
+
+/* TAB */
 window.showTab = function(tab){
-
-    document.querySelectorAll("section").forEach(s => {
-        s.classList.remove("active");
-    });
-
+    document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
     document.getElementById(tab).classList.add("active");
-
-    document.querySelectorAll("nav button").forEach(b => {
-        b.classList.remove("active");
-    });
-
-    document.querySelector(`[onclick="showTab('${tab}')"]`)
-    .classList.add("active");
 };
 
-/* =========================
-   SUBMIT SONG (FIXED)
-========================= */
+/* COPY */
+window.copy = function(code){
+    navigator.clipboard.writeText(code);
+    alert("Copied: " + code);
+};
+
+/* SUBMIT */
 window.submitSong = async function(){
 
-    const code = document.getElementById("djcode").value.trim().toUpperCase();
+    if(role !== "dj" && role !== "admin") return;
+
     const title = document.getElementById("title").value;
-    const music = document.getElementById("code").value;
-    const status = document.getElementById("status");
-
-    if(!code || !title || !music){
-        status.innerText = "Fill all fields";
-        return;
-    }
-
-    const dj = djCodes[code];
-
-    if(!dj){
-        status.innerText = "Invalid DJ Code";
-        return;
-    }
+    const code = document.getElementById("code").value;
 
     await addDoc(collection(db,"pendingSongs"),{
-        dj,
+        dj: role,
         title,
-        code: music,
+        code,
         status:"pending",
         createdAt:serverTimestamp()
     });
 
-    status.innerText = "Submitted!";
+    document.getElementById("status").innerText = "Submitted!";
 };
 
-/* =========================
-   LOAD SONGS
-========================= */
-async function loadSongs(){
-    const snap = await getDocs(collection(db,"songs"));
-
-    songs = snap.docs.map(d => d.data());
-
-    document.getElementById("songs").innerHTML =
-    songs.map(s => `
-        <div class="card">
-            <h3>${s.title}</h3>
-            <p>${s.dj}</p>
-            <p>${s.code}</p>
-        </div>
-    `).join("");
-}
-
-/* =========================
-   LOAD PENDING
-========================= */
+/* LOAD PENDING */
 async function loadPending(){
     const snap = await getDocs(collection(db,"pendingSongs"));
 
-    const pending = snap.docs.map(d => ({id:d.id, ...d.data()}));
-
     document.getElementById("pending").innerHTML =
-    pending.map(p => `
+    snap.docs.map(d => {
+        const p = d.data();
+        return `
         <div class="card">
             <h3>${p.title}</h3>
             <p>${p.dj}</p>
-
-            <button class="small-btn" onclick="approve('${p.id}')">
-                Approve
-            </button>
-        </div>
-    `).join("");
+            <button onclick="approve('${d.id}','${p.title}','${p.dj}','${p.code}')">Approve</button>
+        </div>`;
+    }).join("");
 }
 
-/* =========================
-   APPROVE (SAFE FIXED)
-========================= */
-window.approve = async function(id){
-
-    const snap = await getDocs(collection(db,"pendingSongs"));
-    const song = snap.docs.find(d => d.id === id);
-
-    if(!song) return;
-
-    const data = song.data();
+/* APPROVE */
+window.approve = async function(id,title,dj,code){
 
     await addDoc(collection(db,"songs"),{
-        title: data.title,
-        dj: data.dj,
-        code: data.code,
-        createdAt: serverTimestamp()
+        title,
+        dj,
+        code,
+        createdAt:serverTimestamp()
     });
 
     await updateDoc(doc(db,"pendingSongs",id),{
         status:"approved"
     });
 
-    loadSongs();
     loadPending();
 };
 
-/* =========================
-   INIT
-========================= */
-loadSongs();
 loadPending();
 
 </script>
+
 </body>
 </html>
