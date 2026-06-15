@@ -18,6 +18,7 @@ header{
     padding:20px;
     text-align:center;
     border-bottom:1px solid rgba(255,215,0,.2);
+    position:relative;
 }
 
 header h1{
@@ -25,21 +26,41 @@ header h1{
     text-shadow:0 0 10px rgba(255,215,0,.3);
 }
 
-/* LOGIN SCREEN */
-#loginBox{
-    max-width:400px;
-    margin:80px auto;
-    padding:20px;
-    background:#141414;
-    border-radius:12px;
-    border:1px solid rgba(255,215,0,.3);
-    text-align:center;
+/* LOGIN BUTTON */
+#loginBtn{
+    position:absolute;
+    right:20px;
+    top:20px;
+    background:gold;
+    border:none;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    box-shadow:0 0 10px gold;
 }
 
-#loginBox input{
+/* LOGIN MODAL */
+#loginModal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.85);
+    justify-content:center;
+    align-items:center;
+}
+
+#loginBox{
+    background:#141414;
+    padding:20px;
+    border-radius:12px;
+    width:300px;
+    border:1px solid gold;
+}
+
+input{
     width:100%;
     padding:10px;
-    margin:10px 0;
+    margin:8px 0;
     border:none;
     border-radius:6px;
     background:#222;
@@ -69,6 +90,23 @@ nav button.active{
     box-shadow:0 0 10px gold;
 }
 
+/* SEARCH */
+#searchBar{
+    display:none;
+    text-align:center;
+    padding:10px;
+}
+
+#searchBar input{
+    width:80%;
+    max-width:600px;
+    padding:12px;
+    border-radius:10px;
+    border:none;
+    background:#1a1a1a;
+    color:white;
+}
+
 /* SECTIONS */
 section{
     display:none;
@@ -79,25 +117,21 @@ section.active{
     display:block;
 }
 
-/* CARDS */
+/* CARDS (SPOTIFY STYLE) */
 .card{
-    background:#141414;
+    background:linear-gradient(145deg,#111,#1a1a1a);
     padding:15px;
     margin:10px auto;
-    border-radius:10px;
+    border-radius:12px;
     max-width:500px;
     border:1px solid rgba(255,215,0,.2);
-    box-shadow:0 0 10px rgba(255,215,0,.05);
+    box-shadow:0 0 12px rgba(255,215,0,.05);
+    transition:0.3s;
 }
 
-input{
-    width:100%;
-    padding:10px;
-    margin:8px 0;
-    border:none;
-    border-radius:6px;
-    background:#222;
-    color:white;
+.card:hover{
+    transform:scale(1.02);
+    box-shadow:0 0 18px rgba(255,215,0,.2);
 }
 
 button{
@@ -116,13 +150,6 @@ button{
     padding:5px 10px;
     margin-top:5px;
 }
-
-/* COPY BUTTON */
-.copy-btn{
-    background:#333;
-    color:white;
-    margin-top:5px;
-}
 </style>
 </head>
 
@@ -130,38 +157,40 @@ button{
 
 <header>
     <h1>◆ LUNAR COASTAL DJ HUB</h1>
+    <button id="loginBtn" onclick="openLogin()">Login</button>
 </header>
 
-<!-- LOGIN -->
-<div id="loginBox">
-    <h3>Login Access</h3>
-    <input id="accessCode" placeholder="Enter DJ or Admin Code">
-    <button onclick="login()">Enter</button>
-    <p id="loginStatus"></p>
+<!-- LOGIN MODAL -->
+<div id="loginModal">
+    <div id="loginBox">
+        <h3>Login Access</h3>
+        <input id="accessCode" placeholder="Enter DJ / Admin Code">
+        <button onclick="login()">Enter</button>
+        <p id="loginStatus"></p>
+    </div>
 </div>
 
-<!-- NAV (HIDDEN UNTIL LOGIN) -->
+<!-- NAV -->
 <nav id="nav">
     <button onclick="showTab('home')" class="active">Home</button>
     <button id="uploadTab" onclick="showTab('upload')" style="display:none;">Upload</button>
     <button id="adminTab" onclick="showTab('admin')" style="display:none;">Admin</button>
 </nav>
 
+<!-- SEARCH -->
+<div id="searchBar">
+    <input id="searchInput" placeholder="Search songs or DJs...">
+</div>
+
 <!-- HOME -->
 <section id="home" class="active">
-    <h2>DJ Codes</h2>
-
-    <div class="card">
-        LOU-88421 <button class="copy-btn" onclick="copy('LOU-88421')">Copy</button>
-    </div>
-    <div class="card">
-        NOX-19382 <button class="copy-btn" onclick="copy('NOX-19382')">Copy</button>
-    </div>
+    <h2 style="text-align:center;">🎧 DJ Library</h2>
+    <div id="songs"></div>
 </section>
 
 <!-- UPLOAD -->
 <section id="upload">
-    <h2>DJ Upload</h2>
+    <h2>Upload Song</h2>
     <div class="card">
         <input id="title" placeholder="Song Title">
         <input id="code" placeholder="Music Code">
@@ -203,38 +232,46 @@ const db = getFirestore(app);
 
 /* ROLES */
 const djCodes = ["FRO-77421","GIO-99120","SOL-11293","MOO-88210","SOF-55102","ZEI-77190","CAM-44123","DAM-33210","LAN-88291","LEE-22190","MAX-99201","TOK-11923","TRE-55441","ZOD-77881"];
-const adminCodes = ["LOU-88421","NOX-19382","VIV-55210"];
+const adminCodes = ["LOU-88421","NOX-19382","VIV-55210];
 
-let role = "guest";
+let role = sessionStorage.getItem("role") || "guest";
+let songs = [];
 
 /* LOGIN */
+window.openLogin = function(){
+    document.getElementById("loginModal").style.display = "flex";
+};
+
 window.login = function(){
     const code = document.getElementById("accessCode").value.trim().toUpperCase();
     const status = document.getElementById("loginStatus");
 
     if(adminCodes.includes(code)){
         role = "admin";
+        sessionStorage.setItem("role", role);
         unlockUI();
-        status.innerText = "Admin access granted";
+        status.innerText = "Admin logged in";
         return;
     }
 
     if(djCodes.includes(code)){
         role = "dj";
+        sessionStorage.setItem("role", role);
         unlockUI();
-        status.innerText = "DJ access granted";
+        status.innerText = "DJ logged in";
         return;
     }
 
     status.innerText = "Invalid code";
 };
 
-/* UNLOCK UI */
+/* UI UNLOCK */
 function unlockUI(){
-    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("loginModal").style.display = "none";
     document.getElementById("nav").style.display = "flex";
+    document.getElementById("searchBar").style.display = "block";
 
-    if(role === "dj" || role === "admin"){
+    if(role !== "guest"){
         document.getElementById("uploadTab").style.display = "inline-block";
     }
 
@@ -249,16 +286,29 @@ window.showTab = function(tab){
     document.getElementById(tab).classList.add("active");
 };
 
+/* SEARCH */
+document.getElementById("searchInput").addEventListener("input", filterSongs);
+
+function filterSongs(){
+    const q = document.getElementById("searchInput").value.toLowerCase();
+
+    const filtered = songs.filter(s =>
+        s.title.toLowerCase().includes(q) ||
+        s.dj.toLowerCase().includes(q)
+    );
+
+    renderSongs(filtered);
+}
+
 /* COPY */
 window.copy = function(code){
     navigator.clipboard.writeText(code);
-    alert("Copied: " + code);
 };
 
 /* SUBMIT */
 window.submitSong = async function(){
 
-    if(role !== "dj" && role !== "admin") return;
+    if(role === "guest") return;
 
     const title = document.getElementById("title").value;
     const code = document.getElementById("code").value;
@@ -273,6 +323,26 @@ window.submitSong = async function(){
 
     document.getElementById("status").innerText = "Submitted!";
 };
+
+/* LOAD SONGS */
+async function loadSongs(){
+    const snap = await getDocs(collection(db,"songs"));
+    songs = snap.docs.map(d => d.data());
+    renderSongs(songs);
+}
+
+/* RENDER */
+function renderSongs(list){
+    document.getElementById("songs").innerHTML =
+    list.map(s => `
+        <div class="card">
+            <h3>${s.title}</h3>
+            <p>DJ: ${s.dj}</p>
+            <p>${s.code}</p>
+            <button class="small-btn" onclick="copy('${s.code}')">Copy</button>
+        </div>
+    `).join("");
+}
 
 /* LOAD PENDING */
 async function loadPending(){
@@ -304,9 +374,12 @@ window.approve = async function(id,title,dj,code){
         status:"approved"
     });
 
+    loadSongs();
     loadPending();
 };
 
+/* INIT */
+loadSongs();
 loadPending();
 
 </script>
