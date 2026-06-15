@@ -517,12 +517,13 @@ window.submitSong = async ()=>{
         title,
         code,
         pitch,
-        visibility, // 🔥 NEW
+        visibility,
         createdAt: serverTimestamp()
     });
 
     status.innerText = "Submitted!";
-}
+
+    // RESET FIELDS (must stay INSIDE function)
     document.getElementById("title").value = "";
     document.getElementById("code").value = "";
     document.getElementById("pitch").value = "";
