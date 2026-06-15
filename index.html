@@ -22,20 +22,20 @@ header{
 }
 
 header h1{
-    color:#fff;
+    color:#ffffff;
+    font-weight:700;
 }
 
 /* ACCESS BUTTON */
 #accessBtn{
     position:absolute;
-    right:12px;
-    top:12px;
+    right:15px;
+    top:15px;
     background:#1f1f1f;
     border:1px solid #333;
     color:white;
-    padding:5px 9px;
+    padding:6px 10px;
     border-radius:8px;
-    font-size:12px;
     cursor:pointer;
 }
 
@@ -54,6 +54,7 @@ header h1{
     padding:20px;
     border-radius:12px;
     width:280px;
+    border:1px solid #333;
 }
 
 /* NAV */
@@ -68,71 +69,101 @@ nav button{
     background:#1a1a1a;
     border:none;
     color:white;
-    padding:8px 12px;
+    padding:10px 14px;
     border-radius:8px;
+    cursor:pointer;
 }
 
 nav button.active{
     background:linear-gradient(90deg,#ff00cc,#3333ff);
 }
 
-/* SEARCH (ONLY HOME) */
+/* SEARCH */
 #searchBar{
-    display:none;
     text-align:center;
     padding:10px;
 }
 
 #searchBar input{
-    width:70%;
+    width:80%;
+    max-width:600px;
     padding:10px;
+    border-radius:10px;
     border:none;
-    border-radius:8px;
     background:#1a1a1a;
     color:white;
 }
 
-/* HOME GRID (5 PER ROW FEEL) */
-.grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
-    gap:10px;
-    padding:15px;
+/* SECTIONS */
+section{
+    display:none;
+    padding:20px;
 }
 
-/* CARD SMALLER */
+section.active{
+    display:block;
+}
+
+/* GRID (5 columns) */
+.container{
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:10px;
+    padding:10px;
+}
+
+@media(max-width:1200px){
+    .container{ grid-template-columns:repeat(3,1fr); }
+}
+
+@media(max-width:700px){
+    .container{ grid-template-columns:repeat(2,1fr); }
+}
+
+/* CARD */
 .card{
     background:#151515;
-    padding:10px;
-    border-radius:10px;
+    padding:12px;
+    border-radius:12px;
     border:1px solid rgba(255,255,255,0.08);
+}
+
+.card h3{
+    margin:0;
+    font-size:14px;
+}
+
+.card p{
+    font-size:12px;
+    color:#aaa;
 }
 
 /* BUTTONS */
 button{
     margin-top:6px;
     width:100%;
-    padding:7px;
+    padding:8px;
     border:none;
     border-radius:8px;
-    font-weight:bold;
     cursor:pointer;
+    font-weight:bold;
 }
 
+/* glow */
 .glow{
     background:linear-gradient(90deg,#ff00cc,#3333ff);
     color:white;
 }
 
 .glow:active{
-    transform:scale(0.97);
+    transform:scale(0.96);
 }
 
-/* INPUT */
+/* inputs */
 input{
     width:100%;
     padding:10px;
-    margin:5px 0;
+    margin:6px 0;
     border-radius:8px;
     border:none;
     background:#1a1a1a;
@@ -151,7 +182,8 @@ input{
 <!-- ACCESS -->
 <div id="accessModal">
     <div id="accessBox">
-        <input id="accessInput" placeholder="Enter Code">
+        <h3>Enter Code</h3>
+        <input id="accessInput" placeholder="DJ / Admin Code">
         <button onclick="loginAccess()" class="glow">Enter</button>
         <p id="accessStatus"></p>
     </div>
@@ -164,19 +196,19 @@ input{
     <button id="adminTab" onclick="showTab('admin')" style="display:none;">Admin</button>
 </nav>
 
-<!-- SEARCH ONLY HOME -->
+<!-- SEARCH -->
 <div id="searchBar">
-    <input id="searchInput" placeholder="Search songs...">
+    <input id="searchInput" placeholder="Search songs or DJs...">
 </div>
 
 <!-- HOME -->
 <section id="home" class="active">
-    <div class="grid" id="songs"></div>
+    <div class="container" id="songs"></div>
 </section>
 
 <!-- UPLOAD -->
 <section id="upload">
-    <h2>Upload</h2>
+    <h2>Upload Song</h2>
     <input id="title" placeholder="Song Title">
     <input id="code" placeholder="Music Code">
     <button onclick="submitSong()" class="glow">Submit</button>
@@ -186,7 +218,7 @@ input{
 <!-- ADMIN -->
 <section id="admin">
     <h2>Admin Panel</h2>
-    <div id="pending"></div>
+    <div class="container" id="adminSongs"></div>
 </section>
 
 <script type="module">
@@ -206,16 +238,22 @@ const firebaseConfig = {
   apiKey: "AIzaSyCyBerxDREj6NUnoo5lFdIZRb2d8SV_ebw",
   authDomain: "lunar-coastal-dj.firebaseapp.com",
   projectId: "lunar-coastal-dj",
+  storageBucket: "lunar-coastal-dj.firebasestorage.app",
+  messagingSenderId: "5425058963",
+  appId: "1:5425058963:web:d99b9cd5b370b15fd2a966"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ACCESS */
-let role = "guest";
+/* ROLES */
 const djCodes = ["FRO-77421","GIO-99120","SOL-11293","MOO-88210","SOF-55102","ZEI-77190","CAM-44123","DAM-33210","LAN-88291","LEE-22190","MAX-99201","TOK-11923","TRE-55441","ZOD-77881","LOU-88421","NOX-19382","VIV-55210"];
-const adminCodes = ["LOU003","NOX002","VIV003"];
+const adminCodes = ["LOU003","NOX002","VIV001"];
 
+let role = sessionStorage.getItem("role") || "guest";
+let songs = [];
+
+/* ACCESS */
 window.openAccess = () => {
     document.getElementById("accessModal").style.display = "flex";
 };
@@ -225,122 +263,128 @@ window.loginAccess = () => {
 
     if(adminCodes.includes(code)){
         role = "admin";
-        unlock();
+        sessionStorage.setItem("role", role);
+        unlockUI();
         return;
     }
 
     if(djCodes.includes(code)){
         role = "dj";
-        unlock();
+        sessionStorage.setItem("role", role);
+        unlockUI();
         return;
     }
 
-    document.getElementById("accessStatus").innerText = "Invalid";
+    document.getElementById("accessStatus").innerText = "Invalid code";
 };
 
-function unlock(){
+function unlockUI(){
     document.getElementById("accessModal").style.display = "none";
-    document.getElementById("uploadTab").style.display = "block";
-    if(role==="admin") document.getElementById("adminTab").style.display="block";
-    document.getElementById("searchBar").style.display = "block";
+    document.getElementById("uploadTab").style.display = "inline-block";
+    document.getElementById("adminTab").style.display = role === "admin" ? "inline-block" : "none";
 }
 
 /* TAB */
-window.showTab = (t)=>{
+window.showTab = (tab)=>{
     document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
-    document.getElementById(t).classList.add("active");
+    document.getElementById(tab).classList.add("active");
+
+    document.getElementById("searchBar").style.display =
+        (tab === "home" || tab === "admin") ? "block" : "none";
 };
 
-/* DATA */
-let songs = [];
+/* SEARCH */
+document.getElementById("searchInput").addEventListener("input",()=>{
+    const q = document.getElementById("searchInput").value.toLowerCase();
+    renderSongs(songs.filter(s =>
+        s.title.toLowerCase().includes(q) ||
+        s.dj.toLowerCase().includes(q) ||
+        s.code.toLowerCase().includes(q)
+    ));
+});
 
-function exists(code){
-    return songs.some(s => s.code === code);
-}
+/* COPY */
+window.copyCode = (code)=>{
+    navigator.clipboard.writeText(code);
+};
 
-/* SUBMIT */
+/* SUBMIT WITH DUPLICATE CHECK */
 window.submitSong = async ()=>{
-    const title = document.getElementById("title").value;
-    const code = document.getElementById("code").value;
+
+    const title = document.getElementById("title").value.trim();
+    const code = document.getElementById("code").value.trim();
+    const status = document.getElementById("status");
 
     if(!title || !code){
-        document.getElementById("status").innerText = "Fill all fields";
+        status.innerText = "Cannot submit blank fields";
         return;
     }
 
-    if(exists(code)){
-        document.getElementById("status").innerText = "Code already exists";
+    const snap = await getDocs(collection(db,"songs"));
+    const exists = snap.docs.some(d => d.data().code === code);
+
+    if(exists){
+        status.innerText = "Music code already exists";
         return;
     }
 
-    await addDoc(collection(db,"pendingSongs"),{
+    await addDoc(collection(db,"songs"),{
+        dj: role,
         title,
         code,
-        dj: role,
         createdAt:serverTimestamp()
     });
 
-    document.getElementById("status").innerText = "Submitted";
-
-    document.getElementById("title").value="";
-    document.getElementById("code").value="";
-};
-
-/* LOAD HOME */
-async function loadSongs(){
-    const snap = await getDocs(collection(db,"songs"));
-    songs = snap.docs.map(d=>d.data());
-    render(songs);
-}
-
-function render(list){
-    document.getElementById("songs").innerHTML =
-    list.map(s=>`
-        <div class="card">
-            <h4>${s.title}</h4>
-            <p>${s.dj}</p>
-            <p>${s.code}</p>
-        </div>
-    `).join("");
-}
-
-/* ADMIN */
-async function loadPending(){
-    const snap = await getDocs(collection(db,"pendingSongs"));
-
-    document.getElementById("pending").innerHTML =
-    snap.docs.map(d=>{
-        const p=d.data();
-        return `
-        <div class="card">
-            <h4>${p.title}</h4>
-            <p>${p.dj}</p>
-            <button class="glow" onclick="approve('${d.id}')">Approve</button>
-            <button onclick="remove('${d.id}')">Delete</button>
-        </div>`;
-    }).join("");
-}
-
-/* APPROVE */
-window.approve = async(id)=>{
-    const snap = await getDocs(collection(db,"pendingSongs"));
-    const item = snap.docs.find(d=>d.id===id).data();
-
-    await addDoc(collection(db,"songs"),item);
-    await deleteDoc(doc(db,"pendingSongs",id));
+    status.innerText = "Submitted!";
+    document.getElementById("title").value = "";
+    document.getElementById("code").value = "";
 
     loadSongs();
-    loadPending();
 };
 
-/* DELETE */
-window.remove = async(id)=>{
-    await deleteDoc(doc(db,"pendingSongs",id));
-    loadPending();
+/* LOAD SONGS */
+async function loadSongs(){
+    const snap = await getDocs(collection(db,"songs"));
+    songs = snap.docs.map(d=>({id:d.id, ...d.data()}));
+
+    renderSongs();
+}
+
+/* RENDER HOME + ADMIN */
+function renderSongs(){
+
+    const html = songs.map(s=>`
+        <div class="card">
+            <h3>${s.title}</h3>
+            <p>DJ: ${s.dj}</p>
+            <p>ID: ${s.code}</p>
+
+            <button class="glow" onclick="copyCode('${s.code}')">Copy</button>
+        </div>
+    `).join("");
+
+    document.getElementById("songs").innerHTML = html;
+
+    if(role === "admin"){
+        document.getElementById("adminSongs").innerHTML = songs.map(s=>`
+            <div class="card">
+                <h3>${s.title}</h3>
+                <p>${s.dj}</p>
+                <button onclick="deleteSong('${s.id}')">Delete</button>
+            </div>
+        `).join("");
+    }
+}
+
+/* DELETE ADMIN */
+window.deleteSong = async (id)=>{
+    await deleteDoc(doc(db,"songs",id));
+    loadSongs();
 };
 
+/* INIT */
 loadSongs();
-loadPending();
+window.onload = ()=>{ if(role!=="guest") unlockUI(); };
 
 </script>
 
