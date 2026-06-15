@@ -135,8 +135,15 @@ button{
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, serverTimestamp } 
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { 
+getFirestore, 
+collection, 
+addDoc, 
+getDocs, 
+updateDoc, 
+doc, 
+serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCyBerxDREj6NUnoo5lFdIZRb2d8SV_ebw",
@@ -150,7 +157,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* DJ CODES */
+/* =========================
+   DJ CODES
+========================= */
 const djCodes = {
   "LOU-88421":"Lou",
   "NOX-19382":"Nox",
@@ -172,20 +181,32 @@ const djCodes = {
 };
 
 let songs = [];
-let pending = [];
 
-/* TAB SYSTEM */
+/* =========================
+   TAB SYSTEM (FIXED)
+========================= */
 window.showTab = function(tab){
-    document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
+
+    document.querySelectorAll("section").forEach(s => {
+        s.classList.remove("active");
+    });
+
     document.getElementById(tab).classList.add("active");
 
-    document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
-}
+    document.querySelectorAll("nav button").forEach(b => {
+        b.classList.remove("active");
+    });
 
-/* SUBMIT */
+    document.querySelector(`[onclick="showTab('${tab}')"]`)
+    .classList.add("active");
+};
+
+/* =========================
+   SUBMIT SONG (FIXED)
+========================= */
 window.submitSong = async function(){
 
-    const code = document.getElementById("djcode").value;
+    const code = document.getElementById("djcode").value.trim().toUpperCase();
     const title = document.getElementById("title").value;
     const music = document.getElementById("code").value;
     const status = document.getElementById("status");
@@ -211,11 +232,14 @@ window.submitSong = async function(){
     });
 
     status.innerText = "Submitted!";
-}
+};
 
-/* LOAD SONGS */
+/* =========================
+   LOAD SONGS
+========================= */
 async function loadSongs(){
     const snap = await getDocs(collection(db,"songs"));
+
     songs = snap.docs.map(d => d.data());
 
     document.getElementById("songs").innerHTML =
@@ -228,10 +252,13 @@ async function loadSongs(){
     `).join("");
 }
 
-/* LOAD PENDING */
+/* =========================
+   LOAD PENDING
+========================= */
 async function loadPending(){
     const snap = await getDocs(collection(db,"pendingSongs"));
-    pending = snap.docs.map(d => ({id:d.id, ...d.data()}));
+
+    const pending = snap.docs.map(d => ({id:d.id, ...d.data()}));
 
     document.getElementById("pending").innerHTML =
     pending.map(p => `
@@ -239,21 +266,30 @@ async function loadPending(){
             <h3>${p.title}</h3>
             <p>${p.dj}</p>
 
-            <button class="small-btn" onclick="approve('${p.id}', '${p.title}', '${p.dj}', '${p.code}')">
+            <button class="small-btn" onclick="approve('${p.id}')">
                 Approve
             </button>
         </div>
     `).join("");
 }
 
-/* APPROVE */
-window.approve = async function(id,title,dj,code){
+/* =========================
+   APPROVE (SAFE FIXED)
+========================= */
+window.approve = async function(id){
+
+    const snap = await getDocs(collection(db,"pendingSongs"));
+    const song = snap.docs.find(d => d.id === id);
+
+    if(!song) return;
+
+    const data = song.data();
 
     await addDoc(collection(db,"songs"),{
-        title,
-        dj,
-        code,
-        createdAt:serverTimestamp()
+        title: data.title,
+        dj: data.dj,
+        code: data.code,
+        createdAt: serverTimestamp()
     });
 
     await updateDoc(doc(db,"pendingSongs",id),{
@@ -262,13 +298,14 @@ window.approve = async function(id,title,dj,code){
 
     loadSongs();
     loadPending();
-}
+};
 
-/* INIT */
+/* =========================
+   INIT
+========================= */
 loadSongs();
 loadPending();
 
 </script>
-
 </body>
 </html>
